@@ -1,11 +1,18 @@
 #  Backlog Tracker Android
-#### This app is ported to android using gemini from [github.com/debojitsantra/BacklogTracker](https://github.com/debojitsantra/BacklogTracker)
 
 <p align="center">
   <img src="public/app_logo.png" width="120" style="border-radius: 24px;" alt="Backlog Tracker Logo" referrerPolicy="no-referrer" />
 </p>
 
 A beautifully crafted, high-fidelity **Material Design 3** mobile and web application powered by **React**, **Vite**, **Tailwind CSS v4**, and **Capacitor** to help students calculate, track, and systematically defeat compounding academic backlogs.
+
+---
+
+<!-- Uncomment after IzzyOnDroid listing is approved -->
+<!-- <a href="https://apt.izzysoft.de/fdroid/index/apk/com.debojitsantra.backlogtracker"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a> -->
+
+
+<a href="https://obtainium.imranr.dev/"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/refs/heads/main/assets/graphics/badge_obtainium.png" height="80" alt="Get it on Obtainium"></a> 
 
 ---
 
@@ -19,6 +26,18 @@ A beautifully crafted, high-fidelity **Material Design 3** mobile and web applic
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="18%" alt="Screenshot 1" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="18%" alt="Screenshot 2" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="18%" alt="Screenshot 3" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="18%" alt="Screenshot 4" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="18%" alt="Screenshot 5" />
+</p>
+
+---
+
 ## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS v4, Motion (Animations)
@@ -27,23 +46,22 @@ A beautifully crafted, high-fidelity **Material Design 3** mobile and web applic
 - **CI/CD Pipeline**: GitHub Actions for automated, cloud-based APK generation
 
 ---
+
 ## Install
 
-- Grab letest release from [github.com/debojitsantra/Backlog-Tracker-Android/releases](https://github.com/debojitsantra/BacklogTracker-Android/releases)
+Grab the latest release from [github.com/debojitsantra/BacklogTracker-Android/releases](https://github.com/debojitsantra/BacklogTracker-Android/releases)
+
+---
 
 ##  Local Development & Web Execution
 
-### 1. Prerequisites
-- **Node.js**: `v22.0.0` or higher (Capacitor CLI v6 requirement)
-- **NPM** (packaged with Node)
+### Prerequisites
+- **Node.js** `v22.0.0` or higher
+- **NPM** (bundled with Node)
 
-### 2. Run the Web Server
-Install node packages and boot up the lightning-fast Vite developer server:
+### Run the Web Server
 ```bash
-# Install node modules
 npm install
-
-# Start local server
 npm run dev
 ```
 
@@ -51,43 +69,36 @@ npm run dev
 
 ##  Native Android Build
 
-To compile and preview the code inside an Android Emulator or local physical device:
+### Prerequisites
+- **Android Studio** with Android SDK and build tools installed
+- **Gradle** environment configured
 
-### Local Prerequisites
-- **Android Studio** with Android SDK platform and build tools installed.
-- **Gradle** environment configured.
-
-### Local Compilation Steps
+### Build Steps
 ```bash
-# 1. Compile the high-fidelity web bundle
+# 1. Build the web bundle
 npm run build
 
-# 2. Sync web bundle elements into Capacitor's Android package structure
+# 2. Sync into Capacitor's Android project
 npx cap sync android
 
-# 3. Open the workspace in Android Studio
+# 3. Open in Android Studio
 npx cap open android
 ```
-Inside Android Studio, press **Run** to launch the device wrapper in your target simulator!
+
+Press **Run** inside Android Studio to launch on your device or emulator.
 
 ---
 
-##  Automated CI/CD Android Builds (GitHub Actions)
+##  Automated CI/CD (GitHub Actions)
 
-Any push or pull request to the `main` or `master` branches triggers a fully automated Android compilation sequence! 
+Pushing a version tag (e.g. `v1.0`) triggers a fully automated signed release build.
 
-The workflow (`.github/workflows/build.yml`) utilizes **Node.js 22**, **JDK 17**, and the updated **Capacitor CLI** to safely build and bundle artifact assets:
-
-
-### Sideload Release Testing
-1. Push your updates to your GitHub repository.
-2. Navigate to the **Actions** tab of your GitHub repository.
-3. Select the latest build workflow and download the compiled **APKs** from the artifacts panel!
+The workflow (`.github/workflows/release.yml`) uses **Node.js 22** and **JDK 21** to build, sign, and publish the APK to GitHub Releases automatically.
 
 ---
 
 ##  Author
 
-- Maintainer: **Debojit Santra**  
+- Maintainer: **Debojit Santra**
 - Made Using Gemini
 - GitHub Portfolio: [github.com/debojitsantra](https://github.com/debojitsantra)
