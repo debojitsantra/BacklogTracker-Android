@@ -1,0 +1,5 @@
+{
+  "name": "Backlog Tracker",
+  "description": "An offline-first Android-styled (Material Design 3) dashboard to track, calculate, and defeat course lecture backlogs with simulated daily growth.",
+  "requestFramePermissions": [],
+}
