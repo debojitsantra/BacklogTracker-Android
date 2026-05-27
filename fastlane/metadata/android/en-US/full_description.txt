@@ -1,4 +1,4 @@
-A beautifully crafted, high-fidelity Material Design 3 mobile and web application powered by React, Vite, Tailwind CSS v4, and Tauri v2 to help students calculate, track, and systematically defeat compounding academic backlogs.
+A beautifully crafted, high-fidelity Material Design 3 mobile and web application powered by React, Vite, Tailwind CSS v4 to help students calculate, track, and systematically defeat compounding academic backlogs.
 
 Features:
 - Track and calculate compounding backlogs
