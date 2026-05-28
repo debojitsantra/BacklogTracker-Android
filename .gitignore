@@ -11,4 +11,5 @@ android/build/
 android/app/build/
 .idea/
 *.iml
+.vscode/
 
