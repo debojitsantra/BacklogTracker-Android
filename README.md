@@ -93,7 +93,7 @@ Press **Run** inside Android Studio to launch on your device or emulator.
 
 Pushing a version tag (e.g. `v1.0`) triggers a fully automated signed release build.
 
-The workflow (`.github/workflows/release.yml`) uses **Node.js 22** and **JDK 21** to build, sign, and publish the APK to GitHub Releases automatically.
+The workflow (`.github/workflows/build.yml`) uses **Node.js 22** and **JDK 21** to build, sign, and publish the APK to GitHub Releases automatically.
 
 ---
 
