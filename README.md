@@ -100,5 +100,5 @@ The workflow (`.github/workflows/build.yml`) uses **Node.js 22** and **JDK 21** 
 ##  Author
 
 - Maintainer: **Debojit Santra**
-- Made Using Gemini
+- Documentation & some ui features made using Gemini
 - GitHub Portfolio: [github.com/debojitsantra](https://github.com/debojitsantra)
