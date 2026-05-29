@@ -1,0 +1,15 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+android/.gradle/
+android/build/
+android/app/build/
+.idea/
+*.iml
+.vscode/
+
