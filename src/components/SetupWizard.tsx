@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { PRESET_SUBJECTS, PALETTE } from '../data';
 import { AppData, Subject } from '../types';
+import { getLocalDateString } from '../utils/date';
 import { Plus, Trash2, Palette, Sparkles, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface SetupWizardProps {
@@ -155,7 +156,7 @@ export default function SetupWizard({ initialData, onSave, onCancel }: SetupWiza
       return;
     }
 
-    const todayString = new Date().toISOString().split('T')[0];
+    const todayString = getLocalDateString();
 
     onSave({
       subjects: consolidatedSubjects,

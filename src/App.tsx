@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Sparkles,
@@ -35,6 +35,7 @@ import KPICard from './components/KPICard';
 import SubjectCard from './components/SubjectCard';
 import BacklogChart from './components/BacklogChart';
 import OfflineNotification from './components/OfflineNotification';
+import { getCalendarDaysDifference, getLocalDateString, parseLocalDate } from './utils/date';
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => {
@@ -86,32 +87,7 @@ export default function App() {
   // Simulated Time Machine offsets
   const [simulatedDaysShift, setSimulatedDaysShift] = useState(0);
 
-  // Helper: Get local date code string (YYYY-MM-DD)
-  const getLocalDateString = (offsetDays = 0) => {
-    const d = new Date();
-    if (offsetDays !== 0) {
-      d.setDate(d.getDate() + offsetDays);
-    }
-    const yr = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const dy = String(d.getDate()).padStart(2, '0');
-    return `${yr}-${mo}-${dy}`;
-  };
-
-  // Helper: Calculate number of days between two dates strings
-  const getDaysDifference = (startStr: string, endStr: string) => {
-    try {
-      const start = new Date(startStr);
-      const end = new Date(endStr);
-      const diffTime = end.getTime() - start.getTime();
-      return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
-    } catch (e) {
-      return 0;
-    }
-  };
-
-  // Check and run automated daily backlog growth
-  useEffect(() => {
+  const runDailyBacklogGrowth = useCallback(() => {
     if (!data.setup_done || !data.subjects || Object.keys(data.subjects).length === 0) return;
 
     const todayStr = getLocalDateString();
@@ -119,13 +95,13 @@ export default function App() {
 
     if (todayStr <= lastStr) return; // Already up to date
 
-    const diffDays = getDaysDifference(lastStr, todayStr);
+    const diffDays = getCalendarDaysDifference(lastStr, todayStr);
     if (diffDays <= 0) return;
 
     // Simulate day-by-day progression
     let totalAdded = 0;
     const updatedSubjects = { ...data.subjects };
-    const lastDateObj = new Date(lastStr);
+    const lastDateObj = parseLocalDate(lastStr);
 
     for (let i = 1; i <= diffDays; i++) {
       const nextDay = new Date(lastDateObj);
@@ -164,7 +140,26 @@ export default function App() {
       totalAdded,
       lastUpdatedDate: lastStr
     });
-  }, [data.setup_done]);
+  }, [data]);
+
+  // Check and run automated daily backlog growth, including when the app stays open past midnight.
+  useEffect(() => {
+    runDailyBacklogGrowth();
+
+    const intervalId = window.setInterval(runDailyBacklogGrowth, 60 * 1000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        runDailyBacklogGrowth();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [runDailyBacklogGrowth]);
 
   // Set fresh default quote on first boot
   useEffect(() => {

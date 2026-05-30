@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { getLocalDateString } from './utils/date';
+
 export const MOTIVATIONAL_QUOTES = [
   "Anxiety guesses. Mathematics calculates. You can clear this!",
   "12 days of absolute hustle beats 2 months of constant dread.",
@@ -72,7 +74,7 @@ export const DEFAULT_DATA = {
   classes_per_day: 4,
   skip_sunday: true,
   course_name: "My Course Tracker",
-  last_updated: new Date().toISOString().split('T')[0],
+  last_updated: getLocalDateString(),
   setup_done: false,
   theme: "dark" as const
 };
