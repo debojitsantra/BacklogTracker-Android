@@ -247,7 +247,7 @@ export default function SetupWizard({ initialData, onSave, onCancel }: SetupWiza
             </h2>
             <p className="text-[11px] text-[#49454f] dark:text-[#cac4d0] font-medium">Toggle subjects and specify initial values:</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 items-start">
               {Object.entries(PRESET_SUBJECTS).map(([name, config]) => {
                 const isActive = selectedPresets.includes(name);
                 return (

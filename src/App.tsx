@@ -606,12 +606,12 @@ export default function App() {
           </div>
         </section>
 
-        {/* Time Travel Gamification controls - Let's see cumulative compounding effects! */}
+        {/* Time Travel Gamification controls */}
         <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 space-y-3 shadow-sm">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[#6750a4] dark:text-[#a8c7fa]" />
             <h4 className="text-xs font-bold text-[#1d1b20] dark:text-white uppercase tracking-wider">
-              🚀 Time Simulator (Accumulation Predictor)
+              🚀 Accumulation Predictor
             </h4>
           </div>
           <p className="text-[10px] text-[#49454f] dark:text-[#c4c6d0] leading-relaxed font-medium">
@@ -659,7 +659,7 @@ export default function App() {
 
       </main>
 
-      {/* Structured Footer with requested contact details */}
+      {/* Footer */}
       <footer className="bg-[#f7f2fa] dark:bg-[#15131b] border-t border-[#cac4d0]/30 dark:border-[#24262f]/60 py-6 px-4 mt-12 text-center text-xs">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-left font-sans">
@@ -681,7 +681,7 @@ export default function App() {
               style={{ minHeight: '44px' }}
             >
               <User className="w-3.5 h-3.5" />
-              <span>Contact & Credits</span>
+              <span>Story</span>
             </button>
 
             <a
@@ -698,7 +698,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Contact Credits Modal Popup */}
+      {/* Story Modal Popup*/}
       <AnimatePresence>
         {showCreditsModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1d1b20]/60 dark:bg-black/80 backdrop-blur-sm">
@@ -721,36 +721,18 @@ export default function App() {
                 <div className="w-12 h-12 bg-[#e8def8] dark:bg-[#24262f] text-[#6750a4] dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-transparent dark:border-amber-400/20">
                   <Award className="w-6 h-6" />
                 </div>
-                <h3 className="text-base font-bold text-[#1d1b20] dark:text-white">Backlog Tracker Core</h3>
+                <h3 className="text-base font-bold text-[#1d1b20] dark:text-white"></h3>
                 <p className="text-[10px] text-[#6750a4] dark:text-[#a8c7fa] uppercase tracking-widest font-mono font-bold mt-0.5">
-                  Universal Analytics System
+                  Story behind this app
                 </p>
 
                 <p className="text-xs text-[#49454f] dark:text-[#c4c6d0] mt-4 leading-relaxed font-medium">
-                  Refactored for offline-first React and Android PWA environments using the precise mathematics of backlog growth.
+                 Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
                 </p>
 
-                <div className="mt-6 border-t border-[#cac4d0]/30 dark:border-[#24262f]/60 pt-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#49454f] dark:text-[#c4c6d0] font-semibold">Maintainer:</span>
-                    <strong className="text-[#1d1b20] dark:text-white">Debojit Santra</strong>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#49454f] dark:text-[#c4c6d0] font-semibold">Active Portfolio:</span>
-                    <a
-                      href="https://github.com/debojitsantra"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#6750a4] dark:text-[#a8c7fa] hover:underline font-mono font-bold"
-                    >
-                      github.com/debojitsantra
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#49454f] dark:text-[#c4c6d0] font-semibold">System Spec:</span>
-                    <span className="text-[#006a6a] dark:text-[#86d6a5] font-mono font-bold">MD3 Local client</span>
-                  </div>
-                </div>
+
+
+
 
                 <button
                   type="button"

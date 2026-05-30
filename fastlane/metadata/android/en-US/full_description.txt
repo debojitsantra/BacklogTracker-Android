@@ -2,7 +2,7 @@ A beautifully crafted, high-fidelity Material Design 3 mobile and web applicatio
 
 Features:
 - Track and calculate compounding backlogs
-- High-fidelity Material Design 3 user interface
+- Material Design 3 user interface
 - Light and dark themes
 - Local offline data storage
 - Fast and native performance

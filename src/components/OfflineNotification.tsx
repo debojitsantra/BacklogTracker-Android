@@ -39,7 +39,7 @@ export default function OfflineNotification({
             <div>
               <h3 className="font-bold text-base text-[#1d1b20] dark:text-white font-sans">Backlog Growth Alert!</h3>
               <p className="text-[10px] text-[#ba1a1a] dark:text-red-400 uppercase tracking-wider font-extrabold">
-                Offline Auto-Growth Synchronized
+                Auto-Growth Synchronized
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function OfflineNotification({
               style={{ minHeight: '44px' }}
             >
               <Sparkles className="w-4 h-4" />
-              Focus & Neutralize Threat
+              Focus & Neutralize
             </button>
           </div>
         </motion.div>

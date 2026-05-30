@@ -1,0 +1,8 @@
+Improved core app experience:
+
+- More compact subject cards for smaller Android screens
+- Prevented key labels and progress text from wrapping awkwardly in big screens
+- Improved action button layout and icon sizing
+- Aligned setup preset cards more consistently
+- Refined a few in-app labels for cleaner wording
+- Added the story behind why this app was created
