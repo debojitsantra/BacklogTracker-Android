@@ -67,6 +67,8 @@ Grab the latest release from
   </a>
 </p>
 
+**Pc version** [Here](https://github.com/debojitsantra/BacklogTracker) (Made with Python • Lightweight on Pc • Low Ram Use)
+
 ---
 
 ##  Local Development & Web Execution
