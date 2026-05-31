@@ -1,4 +1,6 @@
 #  Backlog Tracker Android
+[![F-Droid](https://img.shields.io/f-droid/v/com.debojitsantra.backlogtracker.svg)](https://f-droid.org/packages/com.debojitsantra.backlogtracker/)
+
 
 <p align="center">
   <img src="public/app_logo.png" width="120" style="border-radius: 24px;" alt="Backlog Tracker Logo" referrerPolicy="no-referrer" />
@@ -12,7 +14,7 @@ A beautifully crafted, high-fidelity **Material Design 3** mobile application po
 <!-- <a href="https://apt.izzysoft.de/fdroid/index/apk/com.debojitsantra.backlogtracker"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a> -->
 
 
-<a href="https://obtainium.imranr.dev/"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/refs/heads/main/assets/graphics/badge_obtainium.png" height="80" alt="Get it on Obtainium"></a> 
+
 
 ---
 
@@ -49,7 +51,18 @@ A beautifully crafted, high-fidelity **Material Design 3** mobile application po
 
 ## Install
 
-Grab the latest release from [github.com/debojitsantra/BacklogTracker-Android/releases](https://github.com/debojitsantra/BacklogTracker-Android/releases)
+Grab the latest release from 
+
+
+<p>
+  <a href="https://github.com/debojitsantra/BacklogTracker-Android/releases">
+    <img src="https://img.shields.io/github/v/release/debojitsantra/BacklogTracker-Android?label=GitHub%20Release&style=for-the-badge&logo=github" alt="GitHub Release" style="vertical-align: middle;">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://f-droid.org/packages/com.debojitsantra.backlogtracker">
+    <img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="60" style="vertical-align: middle;">
+  </a>
+</p>
 
 ---
 
