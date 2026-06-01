@@ -1,20 +1,12 @@
 #  Backlog Tracker Android
-[![F-Droid](https://img.shields.io/f-droid/v/com.debojitsantra.backlogtracker.svg)](https://f-droid.org/packages/com.debojitsantra.backlogtracker/)
-
+[![F-Droid](https://img.shields.io/f-droid/v/com.debojitsantra.backlogtracker.svg)](https://f-droid.org/packages/com.debojitsantra.backlogtracker/)    
+![Maintenance](https://img.shields.io/badge/maintenance-temporarily_paused-orange)
 
 <p align="center">
   <img src="public/app_logo.png" width="120" style="border-radius: 24px;" alt="Backlog Tracker Logo" referrerPolicy="no-referrer" />
 </p>
 
 A beautifully crafted, high-fidelity **Material Design 3** mobile application powered by **React**, **Vite**, **Tailwind CSS v4**, and **Capacitor** to help students calculate, track, and systematically defeat compounding academic backlogs.
-
----
-
-<!-- Uncomment after IzzyOnDroid listing is approved -->
-<!-- <a href="https://apt.izzysoft.de/fdroid/index/apk/com.debojitsantra.backlogtracker"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="80" alt="Get it on IzzyOnDroid"></a> -->
-
-
-
 
 ---
 
