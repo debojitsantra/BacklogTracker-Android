@@ -165,6 +165,65 @@ export default function SetupWizard({ initialData, onSave, onCancel, onImportCou
 
     const parsedData = importValidation.parsedData;
     if (importValidation.type === 'course_design') {
+      // Merge target parameters
+      if (parsedData.course_name) {
+        setCourseName(parsedData.course_name);
+      }
+      if (parsedData.classes_per_day) {
+        setClassesPerDay(parsedData.classes_per_day);
+      }
+      if (parsedData.skip_sunday !== undefined) {
+        setSkipSunday(parsedData.skip_sunday);
+      }
+
+      // Merge subjects
+      const importedSubjects = parsedData.subjects || {};
+      const newSelectedPresets = [...selectedPresets];
+      const newPresetBacklogs = { ...presetBacklogs };
+      const newPresetGrowths = { ...presetGrowths };
+      const newCustomSubjects = [...customSubjects];
+
+      Object.entries(importedSubjects).forEach(([name, sub]) => {
+        if (PRESET_SUBJECTS[name]) {
+          // It's a preset subject
+          if (!newSelectedPresets.includes(name)) {
+            newSelectedPresets.push(name);
+          }
+          if (newPresetBacklogs[name] === undefined || newPresetBacklogs[name] === 0) {
+            newPresetBacklogs[name] = sub.backlog ?? 0;
+          }
+          if (newPresetGrowths[name] === undefined) {
+            newPresetGrowths[name] = sub.daily_increase ?? 1;
+          }
+        } else {
+          // It's a custom subject
+          const existingCustomIdx = newCustomSubjects.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+          if (existingCustomIdx === -1) {
+            // Add as new custom subject
+            newCustomSubjects.push({
+              name: sub.name,
+              emoji: sub.emoji || '📚',
+              color: sub.color || PALETTE[0],
+              backlog: sub.backlog ?? 0,
+              daily_increase: sub.daily_increase ?? 1
+            });
+          } else {
+            // Already exists, update fields
+            newCustomSubjects[existingCustomIdx] = {
+              ...newCustomSubjects[existingCustomIdx],
+              emoji: sub.emoji || newCustomSubjects[existingCustomIdx].emoji,
+              color: sub.color || newCustomSubjects[existingCustomIdx].color,
+              daily_increase: sub.daily_increase ?? newCustomSubjects[existingCustomIdx].daily_increase
+            };
+          }
+        }
+      });
+
+      setSelectedPresets(newSelectedPresets);
+      setPresetBacklogs(newPresetBacklogs);
+      setPresetGrowths(newPresetGrowths);
+      setCustomSubjects(newCustomSubjects);
+
       if (onImportCourseDesign) {
         onImportCourseDesign(parsedData);
       }

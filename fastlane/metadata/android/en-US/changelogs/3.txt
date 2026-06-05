@@ -1,3 +1,5 @@
-- add JSON configuration import functionality with support for course designs and full backups in the setup wizard
+- add JSON configuration import functionality with support for course designs and full backups 
 - add some customization option
-
+- created a community platform to design and share course structure
+- some bug fixes
+- some ui changes

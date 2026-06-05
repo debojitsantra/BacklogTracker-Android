@@ -405,10 +405,34 @@ export default function App() {
       <SetupWizard
         initialData={data}
         onSave={handleSaveData}
-        onCancel={data.setup_done ? () => setWizardOpen(false) : undefined}
+        onCancel={data.setup_done ? () => {
+          // Revert data from localStorage to discard unsaved setup wizard changes
+          const saved = localStorage.getItem('backlog_tracker_data');
+          if (saved) {
+            try {
+              setData(JSON.parse(saved));
+            } catch (e) {}
+          }
+          setWizardOpen(false);
+        } : undefined}
         onImportCourseDesign={(importedData) => {
-          // Load the imported subjects into setup state
-          setData({ ...importedData, setup_done: false });
+          // Load the imported subjects into setup state, merging with existing ones
+          const mergedSubjects = { ...data.subjects };
+          Object.entries(importedData.subjects).forEach(([name, sub]) => {
+            if (!mergedSubjects[name]) {
+              mergedSubjects[name] = sub;
+            }
+          });
+          setData({
+            ...data,
+            course_name: importedData.course_name || data.course_name,
+            classes_per_day: importedData.classes_per_day || data.classes_per_day,
+            skip_sunday: importedData.skip_sunday !== undefined ? importedData.skip_sunday : data.skip_sunday,
+            subjects: mergedSubjects,
+            palette_color: importedData.palette_color || data.palette_color,
+            theme: importedData.theme || data.theme,
+            setup_done: false
+          });
           setWizardOpen(true);
         }}
       />
@@ -726,8 +750,23 @@ export default function App() {
           onUpdateData={handleSaveData}
           onImportFullBackup={handleSaveData}
           onImportCourseDesign={(importedData) => {
-            // Load the imported subjects into setup state
-            setData({ ...importedData, setup_done: false });
+            // Load the imported subjects into setup state, merging with existing ones
+            const mergedSubjects = { ...data.subjects };
+            Object.entries(importedData.subjects).forEach(([name, sub]) => {
+              if (!mergedSubjects[name]) {
+                mergedSubjects[name] = sub;
+              }
+            });
+            setData({
+              ...data,
+              course_name: importedData.course_name || data.course_name,
+              classes_per_day: importedData.classes_per_day || data.classes_per_day,
+              skip_sunday: importedData.skip_sunday !== undefined ? importedData.skip_sunday : data.skip_sunday,
+              subjects: mergedSubjects,
+              palette_color: importedData.palette_color || data.palette_color,
+              theme: importedData.theme || data.theme,
+              setup_done: false
+            });
             setWizardOpen(true);
             setSettingsModalOpen(false);
           }}
