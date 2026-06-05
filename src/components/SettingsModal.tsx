@@ -18,7 +18,10 @@ import {
   Eye,
   EyeOff,
   CalendarDays,
-  FileJson
+  FileJson,
+  User,
+  Github,
+  Award
 } from 'lucide-react';
 import { AppData } from '../types';
 import { validateAndParseImport } from '../utils/validation';
@@ -60,6 +63,7 @@ export default function SettingsModal({
   
   // Customization States
   const [selectedColor, setSelectedColor] = useState(data.palette_color || '#6750a4');
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   
   // Backup & Import States
   const [copiedType, setCopiedType] = useState<'course' | 'backup' | null>(null);
@@ -409,6 +413,33 @@ export default function SettingsModal({
                   </button>
                 </div>
               </div>
+
+              {/* About & Credits */}
+              <div className="space-y-2 border-t border-[#cac4d0]/20 dark:border-[#24262f]/60 pt-4">
+                <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">About & Links</label>
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <button
+                    onClick={() => setShowCreditsModal(true)}
+                    type="button"
+                    className="flex-1 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 hover:bg-[#e8def8] dark:hover:bg-[#2d303a] p-3 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-[#1d1b20] dark:text-white"
+                    style={{ minHeight: '44px' }}
+                  >
+                    <User className="w-4 h-4 text-brand" />
+                    <span>Story behind the App</span>
+                  </button>
+
+                  <a
+                    href="https://github.com/debojitsantra"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 bg-brand-container hover:bg-brand-container-hover p-3 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-brand text-center"
+                    style={{ minHeight: '44px' }}
+                  >
+                    <Github className="w-4 h-4" />
+                    <span>github.com/debojitsantra</span>
+                  </a>
+                </div>
+              </div>
             </>
           ) : (
             <>
@@ -473,7 +504,17 @@ export default function SettingsModal({
 
               {/* Import Panel */}
               <div className="space-y-3 border-t border-[#cac4d0]/20 dark:border-[#24262f]/60 pt-4">
-                <h3 className="text-xs font-bold text-[#49454f] dark:text-[#cac4d0] uppercase tracking-wider">Import Backlog Data</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h3 className="text-xs font-bold text-[#49454f] dark:text-[#cac4d0] uppercase tracking-wider">Import Backlog Data</h3>
+                  <a
+                    href="https://backlogdesigner.pages.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-brand bg-brand-container hover:bg-brand-container-hover px-3 py-1.5 rounded-full border border-brand/20 transition-all text-center inline-block"
+                  >
+                    Download Templates 🌐
+                  </a>
+                </div>
                 
                 {/* File Drop and Pasted JSON */}
                 <div className="space-y-3">
@@ -599,6 +640,52 @@ export default function SettingsModal({
           </button>
         </div>
       </motion.div>
+
+      {/* Story Modal Popup */}
+      <AnimatePresence>
+        {showCreditsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1d1b20]/65 dark:bg-black/85 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[28px] p-6 relative text-[#1d1b20] dark:text-white shadow-xl"
+            >
+              <button
+                onClick={() => setShowCreditsModal(false)}
+                type="button"
+                className="absolute right-4 top-4 p-1.5 text-[#49454f] dark:text-[#c4c6d0] hover:text-[#1d1b20] dark:hover:text-white rounded-full bg-[#f3edf7] dark:bg-[#24262f]"
+                style={{ minWidth: '32px', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="text-center pt-2">
+                <div className="w-12 h-12 bg-brand-container text-brand rounded-2xl flex items-center justify-center mx-auto mb-3 border border-transparent dark:border-amber-400/20">
+                  <Award className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-[#1d1b20] dark:text-white"></h3>
+                <p className="text-[10px] text-brand uppercase tracking-widest font-mono font-bold mt-0.5">
+                  Story behind this app
+                </p>
+
+                <p className="text-xs text-[#49454f] dark:text-[#c4c6d0] mt-4 leading-relaxed font-medium">
+                 Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setShowCreditsModal(false)}
+                  className="w-full mt-6 bg-brand hover:opacity-95 text-white dark:text-[#111318] font-bold py-2.5 rounded-full text-xs transition-all cursor-pointer shadow-sm"
+                  style={{ minHeight: '44px' }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

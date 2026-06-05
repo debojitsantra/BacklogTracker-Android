@@ -1,0 +1,3 @@
+- add JSON configuration import functionality with support for course designs and full backups in the setup wizard
+- add some customization option
+

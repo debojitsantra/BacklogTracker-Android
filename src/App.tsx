@@ -11,17 +11,14 @@ import {
   Sliders,
   Calendar,
   Flame,
-  User,
   Heart,
   ChevronRight,
   TrendingUp,
-  Award,
   Zap,
   Info,
   CalendarDays,
   Target,
   Clock,
-  Github,
   Moon,
   Sun,
   Minus,
@@ -105,7 +102,6 @@ export default function App() {
   }, [data.palette_color, darkMode]);
 
   const [currentQuote, setCurrentQuote] = useState(MOTIVATIONAL_QUOTES[0]);
-  const [showCreditsModal, setShowCreditsModal] = useState(false);
 
   // States for offline sync overlay
   const [offlineSyncReport, setOfflineSyncReport] = useState<{
@@ -715,78 +711,9 @@ export default function App() {
                 ⭐ Convergence target caught up on: {targetDateString}
               </span>
             )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-            <button
-              onClick={() => setShowCreditsModal(true)}
-              type="button"
-              className="text-[#49454f] hover:text-brand dark:text-[#c4c6d0] dark:hover:text-[#a8c7fa] transition-colors flex items-center gap-1 font-bold"
-              style={{ minHeight: '44px' }}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Story</span>
-            </button>
-
-            <a
-              href="https://github.com/debojitsantra"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-brand hover:bg-brand-container-hover bg-brand-container px-3.5 py-1.5 rounded-full border border-[#cac4d0]/30 dark:border-brand-container transition-colors font-mono font-bold text-[10px]"
-              style={{ minHeight: '44px' }}
-            >
-              <Github className="w-3.5 h-3.5" />
-              <span>github.com/debojitsantra</span>
-            </a>
-          </div>
+          </div>          
         </div>
       </footer>
-
-      {/* Story Modal Popup*/}
-      <AnimatePresence>
-        {showCreditsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1d1b20]/60 dark:bg-black/80 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-sm bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[28px] p-6 relative text-[#1d1b20] dark:text-white shadow-xl"
-            >
-              <button
-                onClick={() => setShowCreditsModal(false)}
-                type="button"
-                className="absolute right-4 top-4 p-1.5 text-[#49454f] dark:text-[#c4c6d0] hover:text-[#1d1b20] dark:hover:text-white rounded-full bg-[#f3edf7] dark:bg-[#24262f]"
-                style={{ minWidth: '32px', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="text-center pt-2">
-                <div className="w-12 h-12 bg-brand-container text-brand rounded-2xl flex items-center justify-center mx-auto mb-3 border border-transparent dark:border-amber-400/20">
-                  <Award className="w-6 h-6" />
-                </div>
-                <h3 className="text-base font-bold text-[#1d1b20] dark:text-white"></h3>
-                <p className="text-[10px] text-brand uppercase tracking-widest font-mono font-bold mt-0.5">
-                  Story behind this app
-                </p>
-
-                <p className="text-xs text-[#49454f] dark:text-[#c4c6d0] mt-4 leading-relaxed font-medium">
-                 Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => setShowCreditsModal(false)}
-                  className="w-full mt-6 bg-brand hover:opacity-95 text-white dark:text-[#111318] font-bold py-2.5 rounded-full text-xs transition-all cursor-pointer shadow-sm"
-                  style={{ minHeight: '44px' }}
-                >
-                  Dismiss
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Settings Modal */}
       {settingsModalOpen && (

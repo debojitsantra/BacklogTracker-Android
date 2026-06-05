@@ -297,9 +297,19 @@ export default function SetupWizard({ initialData, onSave, onCancel, onImportCou
               className="overflow-hidden"
             >
               <div className="mb-6 p-4 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 rounded-2xl border border-brand/20 dark:border-brand-container/60 space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileJson className="w-4 h-4 text-brand" />
-                  <h3 className="text-xs font-bold text-brand uppercase tracking-wider">Import Course Design JSON</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#cac4d0]/20 dark:border-[#24262f]/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <FileJson className="w-4 h-4 text-brand" />
+                    <h3 className="text-xs font-bold text-brand uppercase tracking-wider">Import Course Design JSON</h3>
+                  </div>
+                  <a
+                    href="https://backlogdesigner.pages.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-brand bg-brand-container hover:bg-brand-container-hover px-3 py-1.5 rounded-full border border-brand/20 transition-all text-center inline-block"
+                  >
+                    Download Templates 🌐
+                  </a>
                 </div>
 
                 {/* File Upload */}
