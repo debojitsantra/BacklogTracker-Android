@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^8.3.4",
+    "@capacitor/cli": "^8.4.0",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
