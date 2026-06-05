@@ -26,7 +26,8 @@ import {
   Sun,
   Minus,
   Plus,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import { AppData, Subject } from './types';
 import { MOTIVATIONAL_QUOTES, DEFAULT_DATA } from './data';
@@ -35,6 +36,7 @@ import KPICard from './components/KPICard';
 import SubjectCard from './components/SubjectCard';
 import BacklogChart from './components/BacklogChart';
 import OfflineNotification from './components/OfflineNotification';
+import SettingsModal from './components/SettingsModal';
 import { getCalendarDaysDifference, getLocalDateString, parseLocalDate } from './utils/date';
 
 export default function App() {
@@ -63,6 +65,17 @@ export default function App() {
     return true; // default to dark
   });
 
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [showQuotes, setShowQuotes] = useState<boolean>(() => {
+    const saved = localStorage.getItem('show_quotes');
+    return saved !== 'false'; // default to true
+  });
+
+  const handleToggleQuotes = (val: boolean) => {
+    setShowQuotes(val);
+    localStorage.setItem('show_quotes', String(val));
+  };
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -73,6 +86,23 @@ export default function App() {
     }
     localStorage.setItem('darkMode', String(darkMode));
   }, [darkMode]);
+
+  // Set custom brand themes dynamically
+  useEffect(() => {
+    const color = data.palette_color || '#6750a4';
+    const root = document.documentElement;
+    root.style.setProperty('--brand', color);
+    
+    if (darkMode) {
+      root.style.setProperty('--brand-container', '#24262f');
+      root.style.setProperty('--brand-container-hover', '#2d303a');
+      root.style.setProperty('--brand-text', color);
+    } else {
+      root.style.setProperty('--brand-container', color + '15'); // 8% opacity
+      root.style.setProperty('--brand-container-hover', color + '28'); // 15% opacity
+      root.style.setProperty('--brand-text', color);
+    }
+  }, [data.palette_color, darkMode]);
 
   const [currentQuote, setCurrentQuote] = useState(MOTIVATIONAL_QUOTES[0]);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
@@ -380,6 +410,11 @@ export default function App() {
         initialData={data}
         onSave={handleSaveData}
         onCancel={data.setup_done ? () => setWizardOpen(false) : undefined}
+        onImportCourseDesign={(importedData) => {
+          // Load the imported subjects into setup state
+          setData({ ...importedData, setup_done: false });
+          setWizardOpen(true);
+        }}
       />
     );
   }
@@ -401,7 +436,7 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#1a1c22]/90 backdrop-blur-md border-b border-[#cac4d0]/30 dark:border-[#24262f]/60 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#6750a4] dark:bg-[#24262f] p-0.5 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-[#cac4d0]/10 dark:border-amber-400/20">
+            <div className="w-8 h-8 rounded-full bg-brand dark:bg-brand-container p-0.5 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-[#cac4d0]/10 dark:border-amber-400/20">
               <img
                 src="/app_logo.png"
                 alt="App Logo"
@@ -410,7 +445,7 @@ export default function App() {
               />
             </div>
             <div>
-              <span className="text-[10px] text-[#6750a4] dark:text-[#a8c7fa] font-bold uppercase tracking-widest leading-none font-mono block">
+              <span className="text-[10px] text-brand font-bold uppercase tracking-widest leading-none font-mono block">
                 Backlog Tracker
               </span>
               <h1 className="text-sm font-bold text-[#1d1b20] dark:text-white tracking-tight truncate max-w-[180px] sm:max-w-[320px]">
@@ -424,7 +459,7 @@ export default function App() {
             <button
               onClick={() => setDarkMode(prev => !prev)}
               type="button"
-              className="p-2 rounded-full bg-[#f3edf7] hover:bg-[#e8def8] dark:bg-[#24262f] dark:hover:bg-neutral-805 text-[#6750a4] dark:text-[#a8c7fa] border border-[#cac4d0]/20 dark:border-[#24262f] transition-all focus:outline-none flex items-center justify-center"
+              className="p-2 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-[#cac4d0]/20 dark:border-brand-container transition-all focus:outline-none flex items-center justify-center"
               style={{ minHeight: '36px', minWidth: '36px' }}
               title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
@@ -435,12 +470,24 @@ export default function App() {
             <button
               onClick={() => setWizardOpen(true)}
               type="button"
-              className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-[#f3edf7] hover:bg-[#e8def8] dark:bg-[#24262f] dark:hover:bg-neutral-805 text-xs font-bold flex items-center gap-1 text-[#6750a4] dark:text-[#a8c7fa] border border-[#cac4d0]/25 dark:border-[#24262f] transition-all focus:outline-none"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-brand-container hover:bg-brand-container-hover text-xs font-bold flex items-center gap-1 text-brand border border-[#cac4d0]/25 dark:border-brand-container transition-all focus:outline-none"
               style={{ minHeight: '36px' }}
               title="Open Setup Config Wizard"
             >
-              <Sliders className="w-4 h-4 text-[#6750a4] dark:text-[#a8c7fa]" />
+              <Sliders className="w-4 h-4 text-brand" />
               <span className="hidden sm:inline">Configure</span>
+            </button>
+
+            {/* Application Settings Dialog */}
+            <button
+              onClick={() => setSettingsModalOpen(true)}
+              type="button"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-brand-container hover:bg-brand-container-hover text-xs font-bold flex items-center gap-1 text-brand border border-[#cac4d0]/25 dark:border-brand-container transition-all focus:outline-none"
+              style={{ minHeight: '36px' }}
+              title="Open Settings and Share/Backup Dashboard"
+            >
+              <Settings className="w-4 h-4 text-brand" />
+              <span className="hidden sm:inline">Settings</span>
             </button>
           </div>
         </div>
@@ -450,27 +497,29 @@ export default function App() {
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
         
         {/* Quote space widget with micro interactions */}
-        <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 relative overflow-hidden shadow-sm" id="quote-board">
-          <div className="absolute right-3 top-3">
-            <button
-              onClick={rotateQuote}
-              type="button"
-              className="p-1 px-2.5 rounded-full bg-[#f3edf7] hover:bg-[#e8def8] dark:bg-[#24262f] dark:hover:bg-neutral-800 text-[10px] text-[#6750a4] dark:text-[#a8c7fa] border border-[#cac4d0]/20 dark:border-[#24262f] transition-all font-bold"
-              style={{ minHeight: '28px' }}
-              title="Next Motivational Insight"
-            >
-              Next Quote
-            </button>
-          </div>
-          <div className="pr-16">
-            <span className="text-[10px] text-[#6750a4] dark:text-[#a8c7fa] uppercase tracking-wider font-extrabold block mb-1">
-              Daily Fire Nudge 🔥
-            </span>
+        {showQuotes && (
+          <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 relative overflow-hidden shadow-sm" id="quote-board">
+            <div className="absolute right-3 top-3">
+              <button
+                onClick={rotateQuote}
+                type="button"
+                className="p-1 px-2.5 rounded-full bg-brand-container hover:bg-brand-container-hover text-[10px] text-brand border border-[#cac4d0]/20 dark:border-brand-container transition-all font-bold"
+                style={{ minHeight: '28px' }}
+                title="Next Motivational Insight"
+              >
+                Next Quote
+              </button>
+            </div>
+            <div className="pr-16">
+              <span className="text-[10px] text-brand uppercase tracking-wider font-extrabold block mb-1">
+                Daily Fire Nudge 🔥
+              </span>
             <p className="text-xs sm:text-sm text-[#1d1b20] dark:text-white italic font-semibold leading-relaxed">
               "{currentQuote}"
             </p>
           </div>
         </section>
+      )}
 
         {/* Dynamic Key Performance Indicator Blocks */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -485,8 +534,8 @@ export default function App() {
             title="Syllabus Growth"
             value={`+${totalGrowth}/day`}
             subtitle={data.skip_sunday ? 'No growth Sundays' : '7 days active growth'}
-            icon={<TrendingUp className="w-4 h-4 text-[#6750a4]" />}
-            accentColor="#6750a4"
+            icon={<TrendingUp className="w-4 h-4 text-brand" />}
+            accentColor="var(--brand)"
           />
           <KPICard
             title="CLEARANCE ETA"
@@ -521,7 +570,7 @@ export default function App() {
               </p>
             </div>
           </div>
-          <div className="text-[10px] text-[#49454f] dark:text-[#a8c7fa] sm:text-right font-semibold flex-shrink-0">
+          <div className="text-[10px] text-[#49454f] dark:text-brand sm:text-right font-semibold flex-shrink-0">
             <span>Last Sync: </span>
             <span className="font-mono text-[#1d1b20] dark:text-amber-400 font-bold">{data.last_updated}</span>
           </div>
@@ -530,7 +579,7 @@ export default function App() {
         {/* Global Study Capacity Parameters Controls */}
         <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="p-2 bg-[#f3edf7] dark:bg-[#24262f] rounded-xl text-[#6750a4] dark:text-[#a8c7fa]">
+            <div className="p-2 bg-brand-container rounded-xl text-brand">
               <Target className="w-5 h-5" />
             </div>
             <div className="flex-1">
@@ -547,7 +596,7 @@ export default function App() {
             <button
               onClick={() => handleGlobalCpdChange(data.classes_per_day - 1)}
               type="button"
-              className="w-10 h-10 rounded-full bg-[#f3edf7] hover:bg-[#e8def8] dark:bg-[#24262f] dark:hover:bg-neutral-800 text-[#6750a4] dark:text-[#a8c7fa] border border-transparent dark:border-[#24262f]/60 font-bold flex items-center justify-center transition-all"
+              className="w-10 h-10 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-transparent dark:border-brand-container/60 font-bold flex items-center justify-center transition-all"
               style={{ minWidth: '40px', minHeight: '40px' }}
             >
               <Minus className="w-4 h-4" />
@@ -557,12 +606,12 @@ export default function App() {
               min="1"
               value={data.classes_per_day}
               onChange={e => handleGlobalCpdChange(parseInt(e.target.value) || 1)}
-              className="bg-[#f3edf7] dark:bg-[#24262f] text-center font-mono font-bold text-lg w-16 py-1.5 rounded-xl text-[#6750a4] dark:text-[white] border border-[#cac4d0]/30 dark:border-[#24262f] focus:outline-none"
+              className="bg-brand-container text-center font-mono font-bold text-lg w-16 py-1.5 rounded-xl text-brand border border-[#cac4d0]/30 dark:border-brand-container focus:outline-none"
             />
             <button
               onClick={() => handleGlobalCpdChange(data.classes_per_day + 1)}
               type="button"
-              className="w-10 h-10 rounded-full bg-[#f3edf7] hover:bg-[#e8def8] dark:bg-[#24262f] dark:hover:bg-neutral-800 text-[#6750a4] dark:text-[#a8c7fa] border border-transparent dark:border-[#24262f]/60 font-bold flex items-center justify-center transition-all"
+              className="w-10 h-10 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-transparent dark:border-brand-container/60 font-bold flex items-center justify-center transition-all"
               style={{ minWidth: '40px', minHeight: '40px' }}
             >
               <Plus className="w-4 h-4" />
@@ -579,8 +628,8 @@ export default function App() {
         {/* Active Modules Track Card Grid */}
         <section className="space-y-3">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-extrabold text-[#6750a4] dark:text-[#a8c7fa] uppercase tracking-widest flex items-center gap-1">
-              <Calendar className="w-4 h-4 text-[#6750a4] dark:text-[#a8c7fa]" />
+            <h3 className="text-xs font-extrabold text-brand uppercase tracking-widest flex items-center gap-1">
+              <Calendar className="w-4 h-4 text-brand" />
               ACTIVE SUBJECT MODULES
             </h3>
             <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0] font-bold italic">
@@ -604,7 +653,7 @@ export default function App() {
         {/* Time Travel Gamification controls */}
         <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 space-y-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[#6750a4] dark:text-[#a8c7fa]" />
+            <Clock className="w-4 h-4 text-brand" />
             <h4 className="text-xs font-bold text-[#1d1b20] dark:text-white uppercase tracking-wider">
               🚀 Accumulation Predictor
             </h4>
@@ -617,7 +666,7 @@ export default function App() {
             <button
               onClick={() => handleTimeTravelOffset(1)}
               type="button"
-              className="bg-[#f3edf7] dark:bg-[#24262f] hover:bg-[#e8def8] dark:hover:bg-neutral-800 text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-[#24262f] transition-all text-[#6750a4] dark:text-[#a8c7fa]"
+              className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
               style={{ minHeight: '36px' }}
             >
               +1 Day Release Growth
@@ -625,7 +674,7 @@ export default function App() {
             <button
               onClick={() => handleTimeTravelOffset(7)}
               type="button"
-              className="bg-[#f3edf7] dark:bg-[#24262f] hover:bg-[#e8def8] dark:hover:bg-neutral-800 text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-[#24262f] transition-all text-[#6750a4] dark:text-[#a8c7fa]"
+              className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
               style={{ minHeight: '36px' }}
             >
               +1 Week Cumulative
@@ -633,7 +682,7 @@ export default function App() {
             <button
               onClick={() => handleTimeTravelOffset(30)}
               type="button"
-              className="bg-[#f3edf7] dark:bg-[#24262f] hover:bg-[#e8def8] dark:hover:bg-neutral-800 text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-[#24262f] transition-all text-[#6750a4] dark:text-[#a8c7fa]"
+              className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
               style={{ minHeight: '36px' }}
             >
               +30 Days Snowball
@@ -658,7 +707,7 @@ export default function App() {
       <footer className="bg-[#f7f2fa] dark:bg-[#15131b] border-t border-[#cac4d0]/30 dark:border-[#24262f]/60 py-6 px-4 mt-12 text-center text-xs">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-left font-sans">
-            <p className="text-[#6750a4] dark:text-[#a8c7fa] font-bold text-sm tracking-tight mb-0.5 animate-pulse">
+            <p className="text-brand font-bold text-sm tracking-tight mb-0.5 animate-pulse">
               ⚡ Backlog Tracker
             </p>
             {targetDateString && calendarDays !== Infinity && (
@@ -672,7 +721,7 @@ export default function App() {
             <button
               onClick={() => setShowCreditsModal(true)}
               type="button"
-              className="text-[#49454f] hover:text-[#6750a4] dark:text-[#c4c6d0] dark:hover:text-[#a8c7fa] transition-colors flex items-center gap-1 font-bold"
+              className="text-[#49454f] hover:text-brand dark:text-[#c4c6d0] dark:hover:text-[#a8c7fa] transition-colors flex items-center gap-1 font-bold"
               style={{ minHeight: '44px' }}
             >
               <User className="w-3.5 h-3.5" />
@@ -683,7 +732,7 @@ export default function App() {
               href="https://github.com/debojitsantra"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[#6750a4] dark:text-[#a8c7fa] hover:bg-[#e8def8] dark:hover:bg-neutral-800 bg-[#f3edf7] dark:bg-[#24262f] px-3.5 py-1.5 rounded-full border border-[#cac4d0]/30 dark:border-[#24262f] transition-colors font-mono font-bold text-[10px]"
+              className="flex items-center gap-1 text-brand hover:bg-brand-container-hover bg-brand-container px-3.5 py-1.5 rounded-full border border-[#cac4d0]/30 dark:border-brand-container transition-colors font-mono font-bold text-[10px]"
               style={{ minHeight: '44px' }}
             >
               <Github className="w-3.5 h-3.5" />
@@ -713,11 +762,11 @@ export default function App() {
               </button>
 
               <div className="text-center pt-2">
-                <div className="w-12 h-12 bg-[#e8def8] dark:bg-[#24262f] text-[#6750a4] dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-transparent dark:border-amber-400/20">
+                <div className="w-12 h-12 bg-brand-container text-brand rounded-2xl flex items-center justify-center mx-auto mb-3 border border-transparent dark:border-amber-400/20">
                   <Award className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-[#1d1b20] dark:text-white"></h3>
-                <p className="text-[10px] text-[#6750a4] dark:text-[#a8c7fa] uppercase tracking-widest font-mono font-bold mt-0.5">
+                <p className="text-[10px] text-brand uppercase tracking-widest font-mono font-bold mt-0.5">
                   Story behind this app
                 </p>
 
@@ -725,14 +774,10 @@ export default function App() {
                  Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
                 </p>
 
-
-
-
-
                 <button
                   type="button"
                   onClick={() => setShowCreditsModal(false)}
-                  className="w-full mt-6 bg-[#6750a4] hover:bg-[#5b4396] dark:bg-[#a8c7fa] dark:hover:bg-[#94b5f9] text-white dark:text-[#111318] font-bold py-2.5 rounded-full text-xs transition-all cursor-pointer shadow-sm"
+                  className="w-full mt-6 bg-brand hover:opacity-95 text-white dark:text-[#111318] font-bold py-2.5 rounded-full text-xs transition-all cursor-pointer shadow-sm"
                   style={{ minHeight: '44px' }}
                 >
                   Dismiss
@@ -742,6 +787,27 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Settings Modal */}
+      {settingsModalOpen && (
+        <SettingsModal
+          isOpen={settingsModalOpen}
+          onClose={() => setSettingsModalOpen(false)}
+          data={data}
+          showQuotes={showQuotes}
+          onToggleQuotes={handleToggleQuotes}
+          onUpdateData={handleSaveData}
+          onImportFullBackup={handleSaveData}
+          onImportCourseDesign={(importedData) => {
+            // Load the imported subjects into setup state
+            setData({ ...importedData, setup_done: false });
+            setWizardOpen(true);
+            setSettingsModalOpen(false);
+          }}
+          darkMode={darkMode}
+          onToggleDarkMode={setDarkMode}
+        />
+      )}
     </div>
   );
 }

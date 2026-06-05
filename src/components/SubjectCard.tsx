@@ -45,7 +45,7 @@ export default function SubjectCard({
   return (
     <motion.div
       layout
-      className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 hover:border-[#6750a4]/30 dark:hover:border-[#6aa0f2]/30 rounded-[24px] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden"
+      className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 hover:border-brand/30 rounded-[24px] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden"
     >
       {/* Decorative vertical badge line */}
       <div
@@ -68,16 +68,16 @@ export default function SubjectCard({
               <button
                 type="button"
                 onClick={() => onUpdateDailyIncrease(Math.max(0, daily_increase - 1))}
-                className="w-5 h-5 rounded-md bg-[#e8def8] dark:bg-[#24262f] hover:bg-[#d0bcff] dark:hover:bg-neutral-800 text-[#1d192b] dark:text-[#a8c7fa] flex items-center justify-center text-xs select-none transition-colors"
+                className="w-5 h-5 rounded-md bg-brand-container hover:bg-brand-container-hover text-brand flex items-center justify-center text-xs select-none transition-colors cursor-pointer"
                 style={{ minWidth: '20px', minHeight: '20px' }}
               >
                 <Minus className="w-2.5 h-2.5" />
               </button>
-              <span className="font-mono font-bold text-[#1d1b20] dark:text-amber-400 px-1 bg-[#f3edf7] dark:bg-neutral-800 rounded-md">+{daily_increase}</span>
+              <span className="font-mono font-bold text-[#1d1b20] dark:text-amber-400 px-1 bg-brand-container rounded-md">+{daily_increase}</span>
               <button
                 type="button"
                 onClick={() => onUpdateDailyIncrease(daily_increase + 1)}
-                className="w-5 h-5 rounded-md bg-[#e8def8] dark:bg-[#24262f] hover:bg-[#d0bcff] dark:hover:bg-neutral-800 text-[#1d192b] dark:text-[#a8c7fa] flex items-center justify-center text-xs select-none transition-colors"
+                className="w-5 h-5 rounded-md bg-brand-container hover:bg-brand-container-hover text-brand flex items-center justify-center text-xs select-none transition-colors cursor-pointer"
                 style={{ minWidth: '20px', minHeight: '20px' }}
               >
                 <Plus className="w-2.5 h-2.5" />
@@ -103,7 +103,7 @@ export default function SubjectCard({
           <span className="whitespace-nowrap">Surplus control:</span>
           <span className="font-mono dark:text-amber-400 whitespace-nowrap">{Math.round(progressRatio * 100)}%</span>
         </div>
-        <div className="w-full bg-[#f3edf7] dark:bg-[#24262f] h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-brand-container h-2 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progressRatio * 100}%` }}
@@ -119,7 +119,7 @@ export default function SubjectCard({
         <button
           type="button"
           onClick={() => onModifyBacklog(1)}
-          className="flex-1 bg-[#f3edf7] dark:bg-[#24262f] hover:bg-[#e8def8] dark:hover:bg-neutral-800 text-xs font-semibold py-2.5 px-3 rounded-full flex items-center justify-center gap-1.5 text-[#6750a4] dark:text-[#a8c7fa] transition-all select-none border border-[#cac4d0]/20 dark:border-transparent"
+          className="flex-1 bg-brand-container hover:bg-brand-container-hover text-xs font-semibold py-2.5 px-3 rounded-full flex items-center justify-center gap-1.5 text-brand transition-all select-none border border-[#cac4d0]/20 dark:border-transparent cursor-pointer"
           style={{ minHeight: '40px' }}
         >
           <Plus className="w-3.5 h-3.5 flex-shrink-0 text-[#ba1a1a] dark:text-red-400" />

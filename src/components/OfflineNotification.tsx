@@ -49,7 +49,7 @@ export default function OfflineNotification({
             <strong className="text-[#1d1b20] dark:text-white font-bold">{daysElapsed} {daysElapsed === 1 ? 'day' : 'days'} ago</strong>), your course lectures have continued to release.
           </p>
 
-          <div className="mt-4 p-4 bg-[#f3edf7] dark:bg-[#24262f] rounded-[20px] flex items-center justify-between border border-[#cac4d0]/20 dark:border-[#24262f]/60">
+          <div className="mt-4 p-4 bg-brand-container rounded-[20px] flex items-center justify-between border border-[#cac4d0]/20 dark:border-brand-container/60">
             <div className="flex flex-col">
               <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0] font-extrabold uppercase tracking-wider">
                 Lectures Accumulating
@@ -72,7 +72,7 @@ export default function OfflineNotification({
             <button
               onClick={onClose}
               type="button"
-              className="w-full bg-[#6750a4] hover:bg-[#5b4396] dark:bg-[#a8c7fa] dark:hover:bg-[#91b3f5] text-white dark:text-[#111318] font-bold text-sm py-3 rounded-full transition-all outline-none md:cursor-pointer flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+              className="w-full bg-brand hover:opacity-90 text-white dark:text-[#111318] font-bold text-sm py-3 rounded-full transition-all outline-none md:cursor-pointer flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
               style={{ minHeight: '44px' }}
             >
               <Sparkles className="w-4 h-4" />

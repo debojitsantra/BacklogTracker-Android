@@ -1,0 +1,29 @@
+{
+  "subjects": {
+    "Chemistry": {
+      "backlog": 18,
+      "emoji": "\ud83e\uddea",
+      "color": "#ba68c8",
+      "daily_increase": 1
+    },
+    "Maths": {
+      "backlog": 18,
+      "emoji": "\ud83e\uddee",
+      "color": "#4fc3f7",
+      "daily_increase": 1
+    },
+    "Physics": {
+      "backlog": 18,
+      "emoji": "\u269b\ufe0f",
+      "color": "#FF8A65",
+      "daily_increase": 1
+    }
+  },
+  "classes_per_day": 4,
+  "skip_sunday": true,
+  "course_name": "Jee",
+  "last_updated": "2026-06-04",
+  "setup_done": true,
+  "theme": "dark",
+  "_sync_notice": "Auto-synced: Added 1 days of growth."
+}

@@ -24,7 +24,7 @@ export default function KPICard({ title, value, subtitle, icon, accentColor }: K
       {accentColor && (
         <div
           className="absolute top-0 left-0 w-full h-1.5 opacity-80"
-          style={{ backgroundColor: accentColor === '#ffb4ab' ? '#ba1a1a' : accentColor === '#86d6a5' ? '#006a6a' : '#6750a4' }}
+          style={{ backgroundColor: accentColor }}
         />
       )}
 

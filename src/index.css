@@ -6,6 +6,25 @@
 @theme {
   --font-sans: 'Outfit', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-brand: var(--brand);
+  --color-brand-container: var(--brand-container);
+  --color-brand-container-hover: var(--brand-container-hover);
+  --color-brand-text: var(--brand-text);
+}
+
+:root {
+  --brand: #6750a4;
+  --brand-container: #f3edf7;
+  --brand-container-hover: #e8def8;
+  --brand-text: #6750a4;
+}
+
+.dark {
+  --brand: #a8c7fa;
+  --brand-container: #24262f;
+  --brand-container-hover: #2d303a;
+  --brand-text: #a8c7fa;
 }
 
 

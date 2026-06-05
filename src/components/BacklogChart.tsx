@@ -16,7 +16,7 @@ export default function BacklogChart({ subjects }: BacklogChartProps) {
 
   if (totalBacklog <= 0) {
     return (
-      <div className="bg-[#f3edf7] dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-6 text-center">
+      <div className="bg-brand-container border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-6 text-center">
         <span className="text-sm font-bold text-[#006a6a] dark:text-[#86d6a5] tracking-wide block mb-1">
           🎉 ALL CURRICULUMS SECURED & DEFEATED
         </span>
@@ -30,7 +30,7 @@ export default function BacklogChart({ subjects }: BacklogChartProps) {
   return (
     <div className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 space-y-4">
       <div>
-        <h3 className="text-xs font-bold text-[#6750a4] dark:text-[#a8c7fa] uppercase tracking-wider">
+        <h3 className="text-xs font-bold text-brand uppercase tracking-wider">
           Curriculum Weight Distribution
         </h3>
         <p className="text-[10px] text-[#49454f] dark:text-[#cac4d0] mt-0.5">
@@ -39,7 +39,7 @@ export default function BacklogChart({ subjects }: BacklogChartProps) {
       </div>
 
       {/* Stacked indicator bar */}
-      <div className="h-4 w-full bg-[#f3edf7] dark:bg-[#24262f] rounded-full overflow-hidden flex">
+      <div className="h-4 w-full bg-brand-container rounded-full overflow-hidden flex">
         {activeSubjects.map((sub, idx) => {
           if (sub.backlog <= 0) return null;
           const percentage = (sub.backlog / totalBacklog) * 100;
