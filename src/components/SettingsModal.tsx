@@ -92,10 +92,29 @@ export default function SettingsModal({
     });
   };
 
-  // Helper to trigger file download
-  const downloadJSON = (obj: object, filename: string) => {
+  // Helper to trigger file download / share
+  // On Capacitor Android the <a download> trick is silently ignored by the WebView,
+  // so we use the Web Share API (navigator.share with a File) which opens the
+  // native Android share sheet. Desktop browsers fall back to the anchor click.
+  const downloadJSON = async (obj: object, filename: string) => {
     const jsonStr = JSON.stringify(obj, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
+
+    // Use Web Share API when available (Capacitor Android / modern mobile browsers)
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], filename, { type: 'application/json' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: filename });
+          return;
+        } catch (err) {
+          // User cancelled or share failed — fall through to anchor download
+          if ((err as Error).name === 'AbortError') return;
+        }
+      }
+    }
+
+    // Fallback: classic anchor-click download (works in desktop browsers)
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
