@@ -4,7 +4,9 @@ set -e
 echo "==> Installing Java 21"
 sudo apt-get update -q
 sudo apt-get install -y openjdk-21-jdk
-
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh | bash
+nvm install 22.0
+nvm use 22.0
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 export PATH=$JAVA_HOME/bin:$PATH
 
