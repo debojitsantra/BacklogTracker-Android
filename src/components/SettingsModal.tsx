@@ -4,6 +4,9 @@
  */
 
 import React, { useState, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { registerPlugin } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -47,6 +50,12 @@ const COLOR_PRESETS = [
   { name: 'Sunset Orange', hex: '#d84315' }
 ];
 
+// Register the custom native Download plugin
+interface DownloadPlugin {
+  saveToDownloads(options: { filename: string; data: string; mimeType?: string }): Promise<{ path: string }>;
+}
+const DownloadPlugin = registerPlugin<DownloadPlugin>('Download');
+
 export default function SettingsModal({
   isOpen,
   onClose,
@@ -60,11 +69,12 @@ export default function SettingsModal({
   onToggleDarkMode
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<'customization' | 'backup'>('customization');
-  
+  const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+
   // Customization States
   const [selectedColor, setSelectedColor] = useState(data.palette_color || '#6750a4');
   const [showCreditsModal, setShowCreditsModal] = useState(false);
-  
+
   // Backup & Import States
   const [copiedType, setCopiedType] = useState<'course' | 'backup' | null>(null);
   const [importText, setImportText] = useState('');
@@ -92,29 +102,48 @@ export default function SettingsModal({
     });
   };
 
-  // Helper to trigger file download / share
-  // On Capacitor Android the <a download> trick is silently ignored by the WebView,
-  // so we use the Web Share API (navigator.share with a File) which opens the
-  // native Android share sheet. Desktop browsers fall back to the anchor click.
+
   const downloadJSON = async (obj: object, filename: string) => {
     const jsonStr = JSON.stringify(obj, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
 
-    // Use Web Share API when available (Capacitor Android / modern mobile browsers)
-    if (navigator.canShare && navigator.share) {
-      const file = new File([blob], filename, { type: 'application/json' });
-      if (navigator.canShare({ files: [file] })) {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // Direct save to Downloads via custom plugin
+        await DownloadPlugin.saveToDownloads({
+          filename,
+          data: jsonStr,
+          mimeType: 'application/json',
+        });
+        // Show a brief in-UI success message
+        setDownloadSuccess(`"${filename}" saved to Downloads ✓`);
+        setTimeout(() => setDownloadSuccess(null), 3500);
+        return;
+      } catch (err) {
+        console.warn('Direct Downloads write failed, falling back to share sheet:', err);
+        // Fallback: write to cache then share
         try {
-          await navigator.share({ files: [file], title: filename });
+          const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+          const result = await Filesystem.writeFile({
+            path: filename,
+            data: jsonStr,
+            directory: Directory.Cache,
+            encoding: Encoding.UTF8,
+          });
+          await Share.share({
+            title: filename,
+            url: result.uri,
+            dialogTitle: 'Save your backup file to Downloads',
+          });
           return;
-        } catch (err) {
-          // User cancelled or share failed — fall through to anchor download
-          if ((err as Error).name === 'AbortError') return;
+        } catch (_) {
+          // Share sheet dismiss
+          return;
         }
       }
     }
 
-    // Fallback: classic anchor-click download (works in desktop browsers)
+    // Web / desktop fallback: blob anchor-click
+    const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -282,21 +311,19 @@ export default function SettingsModal({
         <div className="flex bg-[#f3edf7] dark:bg-[#24262f] p-1 mx-6 mt-4 rounded-xl">
           <button
             onClick={() => setActiveTab('customization')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              activeTab === 'customization'
-                ? 'bg-white dark:bg-[#1a1c22] text-brand shadow-sm'
-                : 'text-[#49454f] dark:text-[#cac4d0] hover:text-[#1d1b20] dark:hover:text-white'
-            }`}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'customization'
+              ? 'bg-white dark:bg-[#1a1c22] text-brand shadow-sm'
+              : 'text-[#49454f] dark:text-[#cac4d0] hover:text-[#1d1b20] dark:hover:text-white'
+              }`}
           >
             Customization
           </button>
           <button
             onClick={() => setActiveTab('backup')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              activeTab === 'backup'
-                ? 'bg-white dark:bg-[#1a1c22] text-brand shadow-sm'
-                : 'text-[#49454f] dark:text-[#cac4d0] hover:text-[#1d1b20] dark:hover:text-white'
-            }`}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${activeTab === 'backup'
+              ? 'bg-white dark:bg-[#1a1c22] text-brand shadow-sm'
+              : 'text-[#49454f] dark:text-[#cac4d0] hover:text-[#1d1b20] dark:hover:text-white'
+              }`}
           >
             Backup & Share
           </button>
@@ -317,14 +344,12 @@ export default function SettingsModal({
                   <button
                     onClick={() => onToggleDarkMode(!darkMode)}
                     type="button"
-                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${
-                      darkMode ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
-                    }`}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${darkMode ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
+                      }`}
                   >
                     <div
-                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${
-                        darkMode ? 'translate-x-6' : 'translate-x-0'
-                      }`}
+                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${darkMode ? 'translate-x-6' : 'translate-x-0'
+                        }`}
                     />
                   </button>
                 </div>
@@ -336,7 +361,7 @@ export default function SettingsModal({
                   <Palette className="w-4 h-4 text-brand" />
                   <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">App Color Customization</label>
                 </div>
-                
+
                 {/* Presets Grid */}
                 <div className="grid grid-cols-2 gap-2">
                   {COLOR_PRESETS.map((color) => {
@@ -345,11 +370,10 @@ export default function SettingsModal({
                       <button
                         key={color.name}
                         onClick={() => handleColorChange(color.hex)}
-                        className={`p-2.5 rounded-xl border flex items-center gap-2 transition-all text-left cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#f3edf7] dark:bg-[#24262f] border-brand shadow-sm font-bold'
-                            : 'bg-white dark:bg-[#1a1c22]/40 border-[#cac4d0]/30 dark:border-[#24262f]/60 hover:border-brand/40'
-                        }`}
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 transition-all text-left cursor-pointer ${isSelected
+                          ? 'bg-[#f3edf7] dark:bg-[#24262f] border-brand shadow-sm font-bold'
+                          : 'bg-white dark:bg-[#1a1c22]/40 border-[#cac4d0]/30 dark:border-[#24262f]/60 hover:border-brand/40'
+                          }`}
                       >
                         <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: color.hex }} />
                         <span className="text-xs truncate">{color.name}</span>
@@ -393,14 +417,12 @@ export default function SettingsModal({
                   <button
                     onClick={() => handleSkipSundayChange(!data.skip_sunday)}
                     type="button"
-                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${
-                      data.skip_sunday ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
-                    }`}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${data.skip_sunday ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
+                      }`}
                   >
                     <div
-                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${
-                        data.skip_sunday ? 'translate-x-6' : 'translate-x-0'
-                      }`}
+                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${data.skip_sunday ? 'translate-x-6' : 'translate-x-0'
+                        }`}
                     />
                   </button>
                 </div>
@@ -420,14 +442,12 @@ export default function SettingsModal({
                   <button
                     onClick={() => onToggleQuotes(!showQuotes)}
                     type="button"
-                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${
-                      showQuotes ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
-                    }`}
+                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${showQuotes ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
+                      }`}
                   >
                     <div
-                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${
-                        showQuotes ? 'translate-x-6' : 'translate-x-0'
-                      }`}
+                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${showQuotes ? 'translate-x-6' : 'translate-x-0'
+                        }`}
                     />
                   </button>
                 </div>
@@ -462,10 +482,26 @@ export default function SettingsModal({
             </>
           ) : (
             <>
+              {/* Download success toast */}
+              <AnimatePresence>
+                {downloadSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="flex items-center gap-2 px-4 py-3 bg-green-500/15 border border-green-500/30 rounded-2xl text-green-700 dark:text-green-400 text-xs font-bold"
+                  >
+                    <Check className="w-4 h-4 flex-shrink-0 text-green-500" />
+                    {downloadSuccess}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Export Panel */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-[#49454f] dark:text-[#cac4d0] uppercase tracking-wider">Export Backlog Data</h3>
-                
+
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Course Design */}
                   <div className="bg-[#f3edf7]/50 dark:bg-[#24262f]/40 p-4 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex flex-col justify-between space-y-3">
@@ -534,7 +570,7 @@ export default function SettingsModal({
                     Download Templates 🌐
                   </a>
                 </div>
-                
+
                 {/* File Drop and Pasted JSON */}
                 <div className="space-y-3">
                   <div className="flex flex-col sm:flex-row gap-2">
@@ -597,11 +633,10 @@ export default function SettingsModal({
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className={`p-3 rounded-xl border flex flex-col gap-2 ${
-                          validationMessage.success
-                            ? 'bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400'
-                            : 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400'
-                        }`}
+                        className={`p-3 rounded-xl border flex flex-col gap-2 ${validationMessage.success
+                          ? 'bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400'
+                          : 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-400'
+                          }`}
                       >
                         <div className="flex items-start gap-2 text-xs">
                           {validationMessage.success ? (
@@ -629,11 +664,10 @@ export default function SettingsModal({
                             <button
                               type="button"
                               onClick={executeImport}
-                              className={`w-full py-2.5 mt-1 rounded-xl text-xs font-bold text-white transition-all shadow-sm flex items-center justify-center gap-1 cursor-pointer ${
-                                validationMessage.type === 'course_design'
-                                  ? 'bg-brand hover:opacity-90'
-                                  : 'bg-red-600 hover:bg-red-700'
-                              }`}
+                              className={`w-full py-2.5 mt-1 rounded-xl text-xs font-bold text-white transition-all shadow-sm flex items-center justify-center gap-1 cursor-pointer ${validationMessage.type === 'course_design'
+                                ? 'bg-brand hover:opacity-90'
+                                : 'bg-red-600 hover:bg-red-700'
+                                }`}
                             >
                               <FileJson className="w-3.5 h-3.5" />
                               {validationMessage.type === 'course_design' ? 'Load Design into Setup Wizard' : 'Apply Full Backup Overwrite'}
@@ -689,7 +723,7 @@ export default function SettingsModal({
                 </p>
 
                 <p className="text-xs text-[#49454f] dark:text-[#c4c6d0] mt-4 leading-relaxed font-medium">
-                 Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
+                  Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
                 </p>
 
                 <button
