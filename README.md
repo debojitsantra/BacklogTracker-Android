@@ -19,7 +19,7 @@ A beautifully crafted, high-fidelity **Material Design 3** mobile application po
 - **Time Simulator / Predictor**: A predictive tool to fast-forward elapsed days and visualize the exact cumulative compound effects of neglecting daily targets.
 - **Material You Dynamic Coloring**: Premium MD3 palette adapting meticulously across light themes and high-contrast ambient dark modes.
 - **Robust Client Persistence**: Secure offline-first database mapping utilizing local browser and native state managers.
-
+- **Import/export data**: Save your backup data, course design to quickly pickup where you left on other devices.
 ---
 
 ## Screenshots
