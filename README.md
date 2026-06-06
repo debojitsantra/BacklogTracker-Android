@@ -9,7 +9,9 @@
 A beautifully crafted, high-fidelity **Material Design 3** mobile application powered by **React**, **Vite**, **Tailwind CSS v4**, and **Capacitor** to help students calculate, track, and systematically defeat compounding academic backlogs.
 
 
-**Course Repo** at [backlogdesigner.pages.dev](https://backlogdesigner.pages.dev)
+### **Course Repo** at [backlogdesigner.pages.dev](https://backlogdesigner.pages.dev)
+
+- **create and download** premade course design from here
 ---
 
 ##  Features
