@@ -61,9 +61,9 @@ Download latest github release for your platform:
 
 | Platform | Download |
 |----------|----------|
-| Windows  | [BacklogTracker_Setup.exe](https://github.com/debojitsantra/BacklogTracker/releases/) |
-| Linux    | [BacklogTracker_Linux.tar.gz](https://github.com/debojitsantra/BacklogTracker/releases/) |
-| macOS    | [BacklogTracker_macOS.zip](https://github.com/debojitsantra/BacklogTracker/releases/) *(untested)* |
+| Windows  | [BacklogTracker-windows.zip](https://github.com/debojitsantra/BacklogTracker/releases/) |
+| Linux    | [BacklogTracker-linux.zip](https://github.com/debojitsantra/BacklogTracker/releases/) |
+| macOS    | [BacklogTracker-macos.zip](https://github.com/debojitsantra/BacklogTracker/releases/) *(untested)* |
 | Android  | [BacklogTracker.apk](https://github.com/debojitsantra/BacklogTracker/releases/) |
 
 
