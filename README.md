@@ -39,10 +39,10 @@ Download tracker templates from:
 ### Desktop
 
 <p align="center">
-  <img src="assets/images/Screenshots/1.png" width="20%" alt="Screenshot D 1" />
-  <img src="assets/images/Screenshots/2.png" width="20%" alt="Screenshot D 2" />
-  <img src="assets/images/Screenshots/3.png" width="20%" alt="Screenshot D 3" />
-  <img src="assets/images/Screenshots/4.png" width="20%" alt="Screenshot D 4" />
+  <img src="assets/images/Screenshots/1.png" width="45%" alt="Screenshot D 1" />
+  <img src="assets/images/Screenshots/2.png" width="45%" alt="Screenshot D 2" />
+  <img src="assets/images/Screenshots/3.png" width="45%" alt="Screenshot D 3" />
+  <img src="assets/images/Screenshots/4.png" width="45%" alt="Screenshot D 4" />
 </p>
 
 ## Tech Stack
