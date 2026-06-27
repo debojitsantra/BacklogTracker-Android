@@ -12,6 +12,8 @@ export interface ValidationResult {
   error?: string;
 }
 
+const VALID_REPEAT_DAYS = new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+
 export function validateAndParseImport(jsonString: string): ValidationResult {
   if (!jsonString || !jsonString.trim()) {
     return { success: false, error: 'Empty import content.' };
@@ -31,7 +33,6 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
     return { success: false, error: 'Invalid JSON format. Expected a JSON object at the root level.' };
   }
 
-  // Schema Version Check
   if (parsed.schemaVersion !== undefined) {
     const version = Number(parsed.schemaVersion);
     if (Number.isNaN(version)) {
@@ -45,14 +46,17 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
     }
   }
 
-  // Validate Subjects map
-  if (!parsed.subjects || typeof parsed.subjects !== 'object' || Array.isArray(parsed.subjects)) {
-    return { success: false, error: 'Missing or invalid "subjects" field. Expected a dictionary/object.' };
+  const entryMap = parsed.items ?? parsed.subjects;
+  const entryLabel = parsed.items ? 'item' : 'subject';
+  const entryCollectionLabel = parsed.items ? 'items' : 'subjects';
+
+  if (!entryMap || typeof entryMap !== 'object' || Array.isArray(entryMap)) {
+    return { success: false, error: 'Missing or invalid "items" field. Expected a dictionary/object. Old "subjects" templates are still supported.' };
   }
 
-  const subjectsKeys = Object.keys(parsed.subjects);
+  const subjectsKeys = Object.keys(entryMap);
   if (subjectsKeys.length === 0) {
-    return { success: false, error: 'The imported course design has no subjects configured.' };
+    return { success: false, error: `The imported template has no ${entryCollectionLabel} configured.` };
   }
 
   let hasBacklogField = false;
@@ -61,19 +65,18 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
   for (const name of subjectsKeys) {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      return { success: false, error: 'Subject names cannot be empty.' };
+      return { success: false, error: 'Entry names cannot be empty.' };
     }
 
-    const sub = parsed.subjects[name];
+    const sub = entryMap[name];
     if (typeof sub !== 'object' || sub === null) {
-      return { success: false, error: `Subject "${trimmedName}" is invalid. Expected an object.` };
+      return { success: false, error: `The ${entryLabel} "${trimmedName}" is invalid. Expected an object.` };
     }
 
-    // Emoji check
     let emoji = '📚';
     if (sub.emoji !== undefined) {
       if (typeof sub.emoji !== 'string') {
-        return { success: false, error: `Subject "${trimmedName}" has an invalid emoji. Expected a string.` };
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid emoji. Expected a string.` };
       }
       emoji = sub.emoji.trim() || '📚';
       if (emoji.length > 15) {
@@ -81,34 +84,82 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
       }
     }
 
-    // Color check
     let color = '#ba68c8';
     if (sub.color !== undefined) {
       if (typeof sub.color !== 'string') {
-        return { success: false, error: `Subject "${trimmedName}" has an invalid color code. Expected a string.` };
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid color code. Expected a string.` };
       }
       color = sub.color.trim() || '#ba68c8';
     }
 
-    // Daily growth check
-    let daily_increase = 1;
-    if (sub.daily_increase !== undefined) {
-      const parsedGrowth = Number(sub.daily_increase);
+    let perday_type: string | undefined;
+    if (sub.perday_type !== undefined) {
+      if (typeof sub.perday_type !== 'string') {
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid perday_type. Expected a string.` };
+      }
+      perday_type = sub.perday_type.trim().slice(0, 32) || undefined;
+    }
+
+    let repeat_days: string[] | undefined;
+    if (sub.repeat_days !== undefined) {
+      if (!Array.isArray(sub.repeat_days)) {
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has invalid repeat_days. Expected an array.` };
+      }
+      const normalizedDays = sub.repeat_days.map((day: unknown) => typeof day === 'string' ? day.toLowerCase().trim() : '');
+      const invalidDay = normalizedDays.find((day: string) => !VALID_REPEAT_DAYS.has(day));
+      if (invalidDay !== undefined) {
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has invalid repeat_days. Use mon, tue, wed, thu, fri, sat, or sun.` };
+      }
+      repeat_days = Array.from(new Set(normalizedDays));
+    }
+
+    const hasExplicitPerday = sub.perday !== undefined || sub.daily_increase !== undefined;
+    const hasRepeatDays = Boolean(repeat_days?.length);
+    let growth_mode: Subject['growth_mode'] = 'none';
+    if (sub.growth_mode !== undefined) {
+      if (sub.growth_mode === 'none' || sub.growth_mode === 'perday' || sub.growth_mode === 'repeat') {
+        growth_mode = sub.growth_mode;
+      } else {
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid growth_mode.` };
+      }
+    } else {
+      growth_mode = hasExplicitPerday ? 'perday' : hasRepeatDays ? 'repeat' : 'none';
+    }
+
+    let daily_increase = (growth_mode === 'repeat' || growth_mode === 'perday') ? 1 : 0;
+    if (hasExplicitPerday) {
+      const parsedGrowth = Number(sub.perday ?? sub.daily_increase);
       if (Number.isNaN(parsedGrowth) || parsedGrowth < 0) {
-        return { success: false, error: `Subject "${trimmedName}" has an invalid daily_increase value. Must be a non-negative number.` };
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid perday value. Must be a non-negative number.` };
       }
       daily_increase = parsedGrowth;
     }
 
-    // Backlog check
+    let completion_mode: 'todo' | 'backlog' = 'backlog';
+    if (sub.completion_mode !== undefined) {
+      if (sub.completion_mode === 'todo' || sub.completion_mode === 'backlog') {
+        completion_mode = sub.completion_mode;
+      } else {
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid completion_mode. Expected "todo" or "backlog".` };
+      }
+    }
+
     let backlog = 0;
     if (sub.backlog !== undefined) {
       hasBacklogField = true;
       const parsedBacklog = Number(sub.backlog);
       if (Number.isNaN(parsedBacklog) || parsedBacklog < 0) {
-        return { success: false, error: `Subject "${trimmedName}" has an invalid backlog value. Must be a non-negative number.` };
+        return { success: false, error: `The ${entryLabel} "${trimmedName}" has an invalid backlog value. Must be a non-negative number.` };
       }
       backlog = parsedBacklog;
+    }
+
+    if (completion_mode === 'todo') {
+      if (sub.backlog !== undefined) {
+        backlog = Math.max(0, Math.min(1, backlog));
+      } else {
+        backlog = 1;
+      }
     }
 
     validatedSubjects[trimmedName] = {
@@ -117,17 +168,20 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
       color,
       daily_increase,
       backlog,
+      perday_type,
+      repeat_days,
+      growth_mode,
+      completion_mode,
+      schedule_conflict: sub.growth_mode === undefined && hasExplicitPerday && hasRepeatDays,
     };
   }
 
-  // Detect Type
-  // If we have any backlog field or last_updated at the root, treat it as a full backup.
-  // Otherwise, it is a course design.
   const isFullBackup = hasBacklogField || parsed.last_updated !== undefined || parsed.setup_done !== undefined;
   const exportType = isFullBackup ? 'full_backup' : 'course_design';
 
-  // Validate general configuration fields
-  const courseName = typeof parsed.course_name === 'string' && parsed.course_name.trim()
+  const courseName = typeof parsed.title === 'string' && parsed.title.trim()
+    ? parsed.title.trim()
+    : typeof parsed.course_name === 'string' && parsed.course_name.trim()
     ? parsed.course_name.trim()
     : (typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim() : 'Imported Course');
 
@@ -147,7 +201,6 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
     ? parsed.palette_color
     : undefined;
 
-  // Clean data object
   const cleanData: AppData = {
     subjects: validatedSubjects,
     classes_per_day: classesPerDay,
@@ -157,12 +210,12 @@ export function validateAndParseImport(jsonString: string): ValidationResult {
     setup_done: isFullBackup ? (parsed.setup_done !== undefined ? Boolean(parsed.setup_done) : true) : false,
     theme: theme,
     palette_color: palette_color,
+    auto_growth_enabled: parsed.auto_growth_enabled !== undefined ? Boolean(parsed.auto_growth_enabled) : true,
   };
 
-  // If Course Design, clear backlog properties back to 0 just in case
   if (!isFullBackup) {
     Object.keys(cleanData.subjects).forEach(key => {
-      cleanData.subjects[key].backlog = 0;
+      cleanData.subjects[key].backlog = cleanData.subjects[key].completion_mode === 'todo' ? 1 : 0;
     });
   }
 

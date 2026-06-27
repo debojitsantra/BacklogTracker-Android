@@ -1,0 +1,155 @@
+name: Build Desktop Apps
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Build Linux Desktop App
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Vite app
+        run: npm run build
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libfuse2 \
+            patchelf
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build desktop app
+        run: pake ./dist/index.html --name "Backlog Tracker" --width 900 --height 700 --use-local-file --icon ./public/app_logo.png
+
+      - name: Collect Linux artifacts
+        shell: bash
+        run: |
+          mkdir -p desktop-artifacts
+          find . -maxdepth 8 -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) -not -path "./node_modules/*" -exec cp {} desktop-artifacts/ \;
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BacklogTracker-linux
+          path: desktop-artifacts/*
+          if-no-files-found: error
+
+  windows:
+    name: Build Windows Desktop App
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Vite app
+        run: npm run build
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build desktop app
+        run: pake ./dist/index.html --name "Backlog Tracker" --width 900 --height 700 --use-local-file --icon ./public/app_logo.png
+
+      - name: Collect Windows artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path desktop-artifacts
+          Get-ChildItem -Recurse -File -Include *.exe,*.msi |
+            Where-Object { $_.FullName -notmatch '\\node_modules\\' } |
+            Copy-Item -Destination desktop-artifacts
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BacklogTracker-windows
+          path: desktop-artifacts/*
+          if-no-files-found: error
+
+  macos:
+    name: Build macOS Desktop App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Vite app
+        run: npm run build
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build desktop app
+        run: pake ./dist/index.html --name "Backlog Tracker" --width 900 --height 700 --use-local-file --icon ./public/app_logo.png
+
+      - name: Collect macOS artifacts
+        shell: bash
+        run: |
+          mkdir -p desktop-artifacts
+          find . -maxdepth 8 -type f \( -name "*.dmg" -o -name "*.app.tar.gz" \) -not -path "./node_modules/*" -exec cp {} desktop-artifacts/ \;
+          while IFS= read -r app; do
+            ditto -c -k --sequesterRsrc --keepParent "$app" "desktop-artifacts/$(basename "$app").zip"
+          done < <(find . -maxdepth 8 -type d -name "*.app" -not -path "./node_modules/*")
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BacklogTracker-macos
+          path: desktop-artifacts/*
+          if-no-files-found: error

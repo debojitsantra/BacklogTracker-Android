@@ -4,27 +4,17 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import {
-  Sparkles,
-  RefreshCw,
-  Sliders,
   Calendar,
+  CalendarCheck,
   Flame,
-  Heart,
-  ChevronRight,
   TrendingUp,
-  Zap,
-  Info,
-  CalendarDays,
   Target,
   Clock,
-  Moon,
-  Sun,
   Minus,
   Plus,
-  X,
-  Settings
+  Settings,
+  SlidersHorizontal
 } from 'lucide-react';
 import { AppData, Subject } from './types';
 import { MOTIVATIONAL_QUOTES, DEFAULT_DATA } from './data';
@@ -34,7 +24,53 @@ import SubjectCard from './components/SubjectCard';
 import BacklogChart from './components/BacklogChart';
 import OfflineNotification from './components/OfflineNotification';
 import SettingsModal from './components/SettingsModal';
+import HelpModal from './components/HelpModal';
 import { getCalendarDaysDifference, getLocalDateString, parseLocalDate } from './utils/date';
+
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const DAY_LABELS: Record<string, string> = {
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun'
+};
+
+function getGrowthMode(subject: Subject): 'none' | 'perday' | 'repeat' {
+  const growth = subject.daily_increase ?? 0;
+  return subject.growth_mode || (subject.repeat_days?.length ? 'repeat' : growth > 0 ? 'perday' : 'none');
+}
+
+function getGrowthForDate(subject: Subject, date: Date): number {
+  const growth = subject.daily_increase ?? 0;
+  if (growth <= 0) return 0;
+  const mode = getGrowthMode(subject);
+  if (mode === 'none') return 0;
+  if (mode === 'perday') return growth;
+  if (!subject.repeat_days?.length) return 0;
+  return subject.repeat_days.includes(DAY_KEYS[date.getDay()]) ? growth : 0;
+}
+
+function resolveScheduleConflicts(importedData: AppData): AppData {
+  const subjects = { ...importedData.subjects };
+  Object.entries(subjects).forEach(([name, subject]) => {
+    if (!subject.schedule_conflict) return;
+    const keepPerDay = window.confirm(
+      `"${name}" has both per-day growth and repeat days. Press OK to keep per-day growth, or Cancel to keep repeat days.`
+    );
+    subjects[name] = {
+      ...subject,
+      growth_mode: keepPerDay ? 'perday' : 'repeat',
+      repeat_days: keepPerDay ? undefined : subject.repeat_days,
+      perday_type: keepPerDay ? subject.perday_type : undefined,
+      schedule_conflict: false
+    };
+  });
+  return { ...importedData, subjects };
+}
 
 export default function App() {
   const [data, setData] = useState<AppData>(() => {
@@ -59,18 +95,26 @@ export default function App() {
     if (typeof window !== 'undefined') {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
-    return true; // default to dark
+    return true;
   });
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [helpModalOpen, setHelpModalOpen] = useState<boolean>(() => {
+    return localStorage.getItem('backlog_tracker_help_seen') !== 'true';
+  });
   const [showQuotes, setShowQuotes] = useState<boolean>(() => {
     const saved = localStorage.getItem('show_quotes');
-    return saved !== 'false'; // default to true
+    return saved !== 'false';
   });
 
   const handleToggleQuotes = (val: boolean) => {
     setShowQuotes(val);
     localStorage.setItem('show_quotes', String(val));
+  };
+
+  const closeHelpModal = () => {
+    localStorage.setItem('backlog_tracker_help_seen', 'true');
+    setHelpModalOpen(false);
   };
 
   useEffect(() => {
@@ -84,33 +128,31 @@ export default function App() {
     localStorage.setItem('darkMode', String(darkMode));
   }, [darkMode]);
 
-  // Set custom brand themes dynamically
   useEffect(() => {
     const color = data.palette_color || '#6750a4';
     const root = document.documentElement;
     root.style.setProperty('--brand', color);
-    
+
     if (darkMode) {
       root.style.setProperty('--brand-container', '#24262f');
       root.style.setProperty('--brand-container-hover', '#2d303a');
       root.style.setProperty('--brand-text', color);
     } else {
-      root.style.setProperty('--brand-container', color + '15'); // 8% opacity
-      root.style.setProperty('--brand-container-hover', color + '28'); // 15% opacity
+      root.style.setProperty('--brand-container', color + '15');
+      root.style.setProperty('--brand-container-hover', color + '28');
       root.style.setProperty('--brand-text', color);
     }
   }, [data.palette_color, darkMode]);
 
   const [currentQuote, setCurrentQuote] = useState(MOTIVATIONAL_QUOTES[0]);
+  const autoGrowthEnabled = data.auto_growth_enabled !== false;
 
-  // States for offline sync overlay
   const [offlineSyncReport, setOfflineSyncReport] = useState<{
     daysElapsed: number;
     totalAdded: number;
     lastUpdatedDate: string;
   } | null>(null);
 
-  // Simulated Time Machine offsets
   const [simulatedDaysShift, setSimulatedDaysShift] = useState(0);
 
   const runDailyBacklogGrowth = useCallback(() => {
@@ -119,12 +161,21 @@ export default function App() {
     const todayStr = getLocalDateString();
     const lastStr = data.last_updated;
 
-    if (todayStr <= lastStr) return; // Already up to date
+    if (todayStr <= lastStr) return;
+
+    if (!autoGrowthEnabled) {
+      const updatedData: AppData = {
+        ...data,
+        last_updated: todayStr
+      };
+      setData(updatedData);
+      localStorage.setItem('backlog_tracker_data', JSON.stringify(updatedData));
+      return;
+    }
 
     const diffDays = getCalendarDaysDifference(lastStr, todayStr);
     if (diffDays <= 0) return;
 
-    // Simulate day-by-day progression
     let totalAdded = 0;
     const updatedSubjects = { ...data.subjects };
     const lastDateObj = parseLocalDate(lastStr);
@@ -134,14 +185,12 @@ export default function App() {
       nextDay.setDate(lastDateObj.getDate() + i);
       const isSundayObj = nextDay.getDay() === 0;
 
-      if (data.skip_sunday && isSundayObj) {
-        continue; // No growth on Sunday if skip_sunday is active
-      }
-
-      // Grow each subject
       Object.keys(updatedSubjects).forEach(subName => {
         const sub = updatedSubjects[subName];
-        const added = sub.daily_increase ?? 1;
+        if (sub.completion_mode === 'todo') return;
+        if (data.skip_sunday && isSundayObj && !sub.repeat_days?.length) return;
+        const added = getGrowthForDate(sub, nextDay);
+        if (added <= 0) return;
         updatedSubjects[subName] = {
           ...sub,
           backlog: sub.backlog + added
@@ -150,7 +199,6 @@ export default function App() {
       });
     }
 
-    // Update state and persistent storage
     const updatedData: AppData = {
       ...data,
       subjects: updatedSubjects,
@@ -160,15 +208,13 @@ export default function App() {
     setData(updatedData);
     localStorage.setItem('backlog_tracker_data', JSON.stringify(updatedData));
 
-    // Show report modal
     setOfflineSyncReport({
       daysElapsed: diffDays,
       totalAdded,
       lastUpdatedDate: lastStr
     });
-  }, [data]);
+  }, [data, autoGrowthEnabled]);
 
-  // Check and run automated daily backlog growth, including when the app stays open past midnight.
   useEffect(() => {
     runDailyBacklogGrowth();
 
@@ -187,7 +233,6 @@ export default function App() {
     };
   }, [runDailyBacklogGrowth]);
 
-  // Set fresh default quote on first boot
   useEffect(() => {
     rotateQuote();
   }, []);
@@ -203,7 +248,6 @@ export default function App() {
     setWizardOpen(false);
   };
 
-  // Metrics calculators
   const getSubjectsList = (): Subject[] => {
     return Object.values(data.subjects || {});
   };
@@ -212,46 +256,127 @@ export default function App() {
     return getSubjectsList().reduce((sum, s) => sum + s.backlog, 0);
   };
 
+  const hasAnySchedule = (): boolean => {
+    return getSubjectsList().some(s => {
+      if (s.completion_mode === 'todo') return false;
+      const mode = s.growth_mode || (s.repeat_days?.length ? 'repeat' : s.daily_increase && s.daily_increase > 0 ? 'perday' : 'none');
+      return (mode === 'perday' || mode === 'repeat') && (s.daily_increase ?? 0) > 0;
+    });
+  };
+
+  const isAllTodoMode = (): boolean => {
+    const list = getSubjectsList();
+    return list.length > 0 && list.every(s => s.completion_mode === 'todo');
+  };
+
+  const countPendingTodos = (): number => {
+    return getSubjectsList().filter(s => s.completion_mode === 'todo' && s.backlog > 0).length;
+  };
+
   const calculateTotalGrowth = (): number => {
-    return getSubjectsList().reduce((sum, s) => sum + (s.daily_increase ?? 1), 0);
+    if (!autoGrowthEnabled) return 0;
+    return getSubjectsList().reduce((sum, s) => sum + (s.daily_increase ?? 0), 0);
+  };
+
+  const calculateGrowthForDate = (date: Date): number => {
+    if (!autoGrowthEnabled) return 0;
+    const isSundayObj = date.getDay() === 0;
+    return getSubjectsList().reduce((sum, sub) => {
+      if (sub.completion_mode === 'todo') return sum;
+      if (data.skip_sunday && isSundayObj && !sub.repeat_days?.length) return sum;
+      return sum + getGrowthForDate(sub, date);
+    }, 0);
+  };
+
+  const getGrowthKpi = (): {
+    title: string;
+    value: string;
+    subtitle: string;
+  } => {
+    const activeRules = getSubjectsList().filter(
+      sub => sub.completion_mode !== 'todo' && getGrowthMode(sub) !== 'none' && (sub.daily_increase ?? 0) > 0
+    );
+    if (activeRules.length === 0) {
+      return {
+        title: 'Daily Growth',
+        value: '+0',
+        subtitle: 'Manual updates only'
+      };
+    }
+
+    const perDayRules = activeRules.filter(sub => getGrowthMode(sub) === 'perday');
+    const repeatRules = activeRules.filter(sub => getGrowthMode(sub) === 'repeat');
+    const hasPerDay = perDayRules.length > 0;
+    const hasRepeat = repeatRules.length > 0;
+
+
+    const activeDaysPerWeek = data.skip_sunday ? 6 : 7;
+    const perDayWeekly = perDayRules.reduce((sum, sub) => sum + (sub.daily_increase ?? 0) * activeDaysPerWeek, 0);
+    const repeatWeekly = repeatRules.reduce((sum, sub) => {
+      const selectedCount = (sub.repeat_days || []).length;
+      return sum + (sub.daily_increase ?? 1) * selectedCount;
+    }, 0);
+    const weeklyGrowth = perDayWeekly + repeatWeekly;
+
+    const repeatDays = Array.from(new Set(repeatRules.flatMap(sub => sub.repeat_days || [])))
+      .sort((a, b) => WEEK_DAYS.indexOf(a) - WEEK_DAYS.indexOf(b));
+    const repeatDaysLabel = repeatDays.map(day => DAY_LABELS[day] || day).join(', ');
+
+    if (hasPerDay && !hasRepeat) {
+      const dailyGrowth = perDayRules.reduce((sum, sub) => sum + (sub.daily_increase ?? 0), 0);
+      return {
+        title: 'Daily Growth',
+        value: `+${dailyGrowth}/day`,
+        subtitle: data.skip_sunday ? 'Daily rules skip Sunday' : 'Every day'
+      };
+    }
+
+    if (!hasPerDay && hasRepeat) {
+      return {
+        title: `Repeat only — ${repeatDaysLabel || 'selected days'}`,
+        value: `+${repeatWeekly}/week`,
+        subtitle: 'Grows only on selected days'
+      };
+    }
+
+    return {
+      title: 'Weekly Growth',
+      value: `+${weeklyGrowth}/week`,
+      subtitle: `Daily (+${perDayWeekly}/wk) + Repeat (+${repeatWeekly}/wk on ${repeatDaysLabel || 'sel. days'})`
+    };
   };
 
   const calculateClearanceETA = (): {
     calendarDays: number;
     targetDateString: string | null;
   } => {
-    const total = calculateTotalBacklog();
-    if (total <= 0) {
+    const subjects = getSubjectsList();
+    const pendingTodos = subjects.filter(s => s.completion_mode === 'todo' && s.backlog > 0).length;
+    const backlogTotal = subjects
+      .filter(s => s.completion_mode !== 'todo')
+      .reduce((sum, s) => sum + s.backlog, 0);
+
+    if (pendingTodos + backlogTotal <= 0) {
       return { calendarDays: 0, targetDateString: 'Track Cleared' };
     }
 
     const cpd = data.classes_per_day || 4;
-    const growth = calculateTotalGrowth();
-
-    // Check weekly clearance margin
-    const weeklyClearance = data.skip_sunday
-      ? (cpd * 7) - (growth * 6)
-      : (cpd - growth) * 7;
-
-    if (weeklyClearance <= 0) {
-      return { calendarDays: Infinity, targetDateString: null };
-    }
-
-    let currentBacklog = total;
+    let currentTodos = pendingTodos;
+    let currentBacklog = backlogTotal;
     let calendarDays = 0;
     const startDate = new Date();
 
-    while (currentBacklog > 0 && calendarDays < 10000) {
+    while ((currentTodos > 0 || currentBacklog > 0) && calendarDays < 10000) {
       calendarDays++;
       const targetDay = new Date(startDate);
       targetDay.setDate(startDate.getDate() + calendarDays);
-      const isSundayObj = targetDay.getDay() === 0;
+      currentBacklog += calculateGrowthForDate(targetDay);
+      currentBacklog = Math.max(0, currentBacklog - cpd);
+      currentTodos = Math.max(0, currentTodos - 1);
+    }
 
-      if (data.skip_sunday && isSundayObj) {
-        currentBacklog -= cpd;
-      } else {
-        currentBacklog -= (cpd - growth);
-      }
+    if (currentTodos > 0 || currentBacklog > 0) {
+      return { calendarDays: Infinity, targetDateString: null };
     }
 
     const etaDate = new Date();
@@ -272,16 +397,18 @@ export default function App() {
     const updatedSubjects = { ...data.subjects };
     if (!updatedSubjects[name]) return;
 
+    const currentBacklog = Number(updatedSubjects[name].backlog) || 0;
+    const isTodo = updatedSubjects[name].completion_mode === 'todo';
+    const newBacklog = Math.max(0, currentBacklog + amount);
     updatedSubjects[name] = {
       ...updatedSubjects[name],
-      backlog: Math.max(0, updatedSubjects[name].backlog + amount)
+      backlog: isTodo ? Math.min(1, newBacklog) : newBacklog
     };
 
     const updatedData = { ...data, subjects: updatedSubjects };
     setData(updatedData);
     localStorage.setItem('backlog_tracker_data', JSON.stringify(updatedData));
 
-    // Spin/cycle the quote on random clicks as a fun mental micro-nudge
     if (Math.random() < 0.25) {
       rotateQuote();
     }
@@ -307,10 +434,8 @@ export default function App() {
     localStorage.setItem('backlog_tracker_data', JSON.stringify(updatedData));
   };
 
-  // Time Travel: Simulate future projections!
   const handleTimeTravelOffset = (days: number) => {
     if (days === 0) {
-      // Clear simulation offsets & restore actual state
       setSimulatedDaysShift(0);
       const saved = localStorage.getItem('backlog_tracker_data');
       if (saved) {
@@ -321,7 +446,6 @@ export default function App() {
 
     setSimulatedDaysShift(prev => prev + days);
 
-    // Apply incremental progression offset
     const currentSubjects = { ...data.subjects };
     let totalAdded = 0;
     const initialDateObj = new Date();
@@ -331,13 +455,12 @@ export default function App() {
       simulatedDay.setDate(initialDateObj.getDate() + d);
       const isSundayObj = simulatedDay.getDay() === 0;
 
-      if (data.skip_sunday && isSundayObj) {
-        continue;
-      }
-
       Object.keys(currentSubjects).forEach(subName => {
         const sub = currentSubjects[subName];
-        const added = sub.daily_increase ?? 1;
+        if (sub.completion_mode === 'todo') return;
+        if (data.skip_sunday && isSundayObj && !sub.repeat_days?.length) return;
+        const added = getGrowthForDate(sub, simulatedDay);
+        if (added <= 0) return;
         currentSubjects[subName] = {
           ...sub,
           backlog: sub.backlog + added
@@ -352,49 +475,52 @@ export default function App() {
     }));
   };
 
-  // Status Indicator logic
+  const anySchedule = hasAnySchedule();
+  const allTodo = isAllTodoMode();
+  const pendingTodoCount = countPendingTodos();
+
   const { calendarDays, targetDateString } = calculateClearanceETA();
   const totalBacklog = calculateTotalBacklog();
-  const totalGrowth = calculateTotalGrowth();
+  const growthKpi = getGrowthKpi();
 
   const getThreatAnalysis = () => {
     if (totalBacklog <= 0) {
       return {
-        label: 'STATUS INDEX: SECURED (No Backlog)',
-        color: '#006a6a', // Teal green
+        label: 'STATUS INDEX: No Backlog',
+        color: '#006a6a', 
         colorDark: '#86d6a5',
         bgColor: '#e0f2f1',
         darkBgColor: '#0c2d2d',
-        message: 'Master syllabus is fully optimized. Your daily trajectory is safe!'
+        message: 'Everything tracked here is clear. Your current queue is under control.'
       };
     }
-    if (calendarDays === Infinity) {
+    if (calendarDays === Infinity && autoGrowthEnabled) {
       return {
-        label: 'ALERT: CRITICAL (Snowballing Workload)',
-        color: '#ba1a1a', // Danger red M3
+        label: 'ALERT: Snowballing Workload',
+        color: '#ba1a1a', 
         colorDark: '#ffb4ab',
         bgColor: '#ffebee',
         darkBgColor: '#3c1818',
-        message: 'Active growth exceeds clearance capacity. Increase daily watch size to recover!'
+        message: 'Automatic growth exceeds your daily completion target. Consider adjusting your daily completion target.'
       };
     }
     if (calendarDays > 30) {
       return {
-        label: 'STATUS INDEX: OVERLOADED (Steady Practice Required)',
-        color: '#825500', // Warning ochre
+        label: 'STATUS INDEX: Steady Practice Required',
+        color: '#825500', 
         colorDark: '#ffd54f',
         bgColor: '#fff8e1',
         darkBgColor: '#3a2b10',
-        message: `Clearance calendar exceeds 30 days. Stay consistent to compress the timeline.`
+        message: `Clearance calendar exceeds 30 days. Keep completing entries to compress the timeline.`
       };
     }
     return {
-      label: 'STATUS INDEX: STABILIZED (Active Clearance)',
-      color: '#6750a4', // Accent purple M3
+      label: 'STATUS INDEX: Keep Going — On Track',
+      color: '#6750a4', 
       colorDark: '#b8a3e8',
       bgColor: '#f3edf7',
       darkBgColor: '#241a3c',
-      message: `System convergence under control. On pace to secure track in ${calendarDays} days!`
+      message: `On pace to clear the tracked backlog in ${calendarDays} days.`
     };
   };
 
@@ -402,47 +528,50 @@ export default function App() {
 
   if (wizardOpen) {
     return (
-      <SetupWizard
-        initialData={data}
-        onSave={handleSaveData}
-        onCancel={data.setup_done ? () => {
-          // Revert data from localStorage to discard unsaved setup wizard changes
-          const saved = localStorage.getItem('backlog_tracker_data');
-          if (saved) {
-            try {
-              setData(JSON.parse(saved));
-            } catch (e) {}
-          }
-          setWizardOpen(false);
-        } : undefined}
-        onImportCourseDesign={(importedData) => {
-          // Load the imported subjects into setup state, merging with existing ones
-          const mergedSubjects = { ...data.subjects };
-          Object.entries(importedData.subjects).forEach(([name, sub]) => {
-            if (!mergedSubjects[name]) {
-              mergedSubjects[name] = sub;
+      <>
+        <HelpModal isOpen={helpModalOpen} onClose={closeHelpModal} />
+        <SetupWizard
+          initialData={data}
+          onSave={handleSaveData}
+          onCancel={data.setup_done ? () => {
+            const saved = localStorage.getItem('backlog_tracker_data');
+            if (saved) {
+              try {
+                setData({ ...DEFAULT_DATA, ...JSON.parse(saved) });
+              } catch (e) { }
             }
-          });
-          setData({
-            ...data,
-            course_name: importedData.course_name || data.course_name,
-            classes_per_day: importedData.classes_per_day || data.classes_per_day,
-            skip_sunday: importedData.skip_sunday !== undefined ? importedData.skip_sunday : data.skip_sunday,
-            subjects: mergedSubjects,
-            palette_color: importedData.palette_color || data.palette_color,
-            theme: importedData.theme || data.theme,
-            setup_done: false
-          });
-          setWizardOpen(true);
-        }}
-      />
+            setWizardOpen(false);
+          } : undefined}
+          onImportCourseDesign={(importedData) => {
+            const resolvedImport = resolveScheduleConflicts(importedData);
+            const mergedSubjects = { ...data.subjects };
+            Object.entries(resolvedImport.subjects).forEach(([name, sub]) => {
+              if (!mergedSubjects[name]) {
+                mergedSubjects[name] = sub;
+              }
+            });
+            setData({
+              ...data,
+              course_name: resolvedImport.course_name || data.course_name,
+              classes_per_day: resolvedImport.classes_per_day || data.classes_per_day,
+              skip_sunday: resolvedImport.skip_sunday !== undefined ? resolvedImport.skip_sunday : data.skip_sunday,
+              subjects: mergedSubjects,
+              palette_color: resolvedImport.palette_color || data.palette_color,
+              theme: resolvedImport.theme || data.theme,
+              auto_growth_enabled: resolvedImport.auto_growth_enabled ?? data.auto_growth_enabled,
+              setup_done: false
+            });
+            setWizardOpen(true);
+          }}
+        />
+      </>
     );
   }
 
-  // Active theme layout context
   return (
     <div className="min-h-screen bg-[#fef7ff] text-[#1d1b20] dark:bg-[#111318] dark:text-[#e6e1e5] flex flex-col font-sans selection:bg-[#cac4d0] dark:selection:bg-[#49454f] selection:text-[#1d192b] dark:selection:text-[#fef7ff]">
-      {/* Offline auto-growth report dynamic popup */}
+      <HelpModal isOpen={helpModalOpen} onClose={closeHelpModal} />
+
       {offlineSyncReport && (
         <OfflineNotification
           daysElapsed={offlineSyncReport.daysElapsed}
@@ -452,59 +581,31 @@ export default function App() {
         />
       )}
 
-      {/* Styled top navigation bar representing premium Material Design 3 appbar */}
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#1a1c22]/90 backdrop-blur-md border-b border-[#cac4d0]/30 dark:border-[#24262f]/60 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-brand dark:bg-brand-container p-0.5 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden border border-[#cac4d0]/10 dark:border-amber-400/20">
-              <img
-                src="/app_logo.png"
-                alt="App Logo"
-                className="w-full h-full object-cover rounded-full"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            <div>
-              <span className="text-[10px] text-brand font-bold uppercase tracking-widest leading-none font-mono block">
-                Backlog Tracker
-              </span>
-              <h1 className="text-sm font-bold text-[#1d1b20] dark:text-white tracking-tight truncate max-w-[180px] sm:max-w-[320px]">
-                {data.course_name}
-              </h1>
-            </div>
+          <div className="min-w-0">
+            <h1 className="text-base font-bold text-[#1d1b20] dark:text-white tracking-tight truncate max-w-[220px] sm:max-w-[420px]">
+              {data.course_name}
+            </h1>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Manual Dark Mode Selector */}
-            <button
-              onClick={() => setDarkMode(prev => !prev)}
-              type="button"
-              className="p-2 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-[#cac4d0]/20 dark:border-brand-container transition-all focus:outline-none flex items-center justify-center"
-              style={{ minHeight: '36px', minWidth: '36px' }}
-              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            {/* Direct Configuration Wizard */}
             <button
               onClick={() => setWizardOpen(true)}
               type="button"
-              className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-brand-container hover:bg-brand-container-hover text-xs font-bold flex items-center gap-1 text-brand border border-[#cac4d0]/25 dark:border-brand-container transition-all focus:outline-none"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-brand text-white dark:text-[#111318] text-xs font-bold flex items-center gap-1 hover:opacity-90 transition-all focus:outline-none shadow-sm"
               style={{ minHeight: '36px' }}
-              title="Open Setup Config Wizard"
+              title="Open Configuration / Setup"
             >
-              <Sliders className="w-4 h-4 text-brand" />
+              <SlidersHorizontal className="w-4 h-4" />
               <span className="hidden sm:inline">Configure</span>
             </button>
-
-            {/* Application Settings Dialog */}
             <button
               onClick={() => setSettingsModalOpen(true)}
               type="button"
               className="p-2 sm:px-3 sm:py-1.5 rounded-full bg-brand-container hover:bg-brand-container-hover text-xs font-bold flex items-center gap-1 text-brand border border-[#cac4d0]/25 dark:border-brand-container transition-all focus:outline-none"
               style={{ minHeight: '36px' }}
-              title="Open Settings and Share/Backup Dashboard"
+              title="Open Settings and Backup Dashboard"
             >
               <Settings className="w-4 h-4 text-brand" />
               <span className="hidden sm:inline">Settings</span>
@@ -513,10 +614,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Container body bounds */}
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
-        
-        {/* Quote space widget with micro interactions */}
+
         {showQuotes && (
           <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 relative overflow-hidden shadow-sm" id="quote-board">
             <div className="absolute right-3 top-3">
@@ -532,41 +631,62 @@ export default function App() {
             </div>
             <div className="pr-16">
               <span className="text-[10px] text-brand uppercase tracking-wider font-extrabold block mb-1">
-                Daily Fire Nudge 🔥
+                Daily Nudge
               </span>
-            <p className="text-xs sm:text-sm text-[#1d1b20] dark:text-white italic font-semibold leading-relaxed">
-              "{currentQuote}"
-            </p>
-          </div>
-        </section>
-      )}
+              <p className="text-xs sm:text-sm text-[#1d1b20] dark:text-white italic font-semibold leading-relaxed">
+                "{currentQuote}"
+              </p>
+            </div>
+          </section>
+        )}
 
-        {/* Dynamic Key Performance Indicator Blocks */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <KPICard
-            title="TOTAL BACKLOG"
-            value={`${totalBacklog}`}
-            subtitle="Lectures Outstanding"
+            title={allTodo ? 'TASKS PENDING' : 'TOTAL BACKLOG'}
+            value={allTodo ? `${pendingTodoCount}` : `${totalBacklog}`}
+            subtitle={allTodo ? 'Incomplete tasks' : 'Pending items'}
             icon={<Clock className="w-4 h-4 text-[#ba1a1a]" />}
             accentColor="#ba1a1a"
           />
+          {anySchedule && autoGrowthEnabled && (
+            <KPICard
+              title={growthKpi.title}
+              value={growthKpi.value}
+              subtitle={growthKpi.subtitle}
+              icon={<TrendingUp className="w-4 h-4 text-brand" />}
+              accentColor="var(--brand)"
+            />
+          )}
           <KPICard
-            title="Syllabus Growth"
-            value={`+${totalGrowth}/day`}
-            subtitle={data.skip_sunday ? 'No growth Sundays' : '7 days active growth'}
-            icon={<TrendingUp className="w-4 h-4 text-brand" />}
-            accentColor="var(--brand)"
-          />
-          <KPICard
-            title="CLEARANCE ETA"
+            title="CLEARANCE TIME"
             value={calendarDays === Infinity ? 'Never' : `${calendarDays} Days`}
             subtitle={calendarDays === Infinity ? 'Critical Load error' : 'Estimated catchup timeline'}
             icon={<Target className="w-4 h-4 text-[#006a6a]" />}
             accentColor={calendarDays === Infinity ? '#ba1a1a' : '#006a6a'}
           />
+          {totalBacklog > 0 && (
+            <KPICard
+              title="BACKLOG FINISH DATE"
+              value={
+                calendarDays === Infinity
+                  ? 'Never'
+                  : targetDateString
+                    ? targetDateString.split(',').slice(1).join(',').trim()
+                    : '—'
+              }
+              subtitle={
+                calendarDays === Infinity
+                  ? 'Growth exceeds budget'
+                  : targetDateString
+                    ? `In ${calendarDays} day${calendarDays === 1 ? '' : 's'}`
+                    : 'Track already clear'
+              }
+              icon={<CalendarCheck className="w-4 h-4 text-[#6750a4]" />}
+              accentColor="#6750a4"
+            />
+          )}
         </section>
 
-        {/* Adaptive Threat Status Banner */}
         <section
           style={{
             borderColor: (darkMode ? threat.colorDark : threat.color) + '40',
@@ -596,64 +716,64 @@ export default function App() {
           </div>
         </section>
 
-        {/* Global Study Capacity Parameters Controls */}
-        <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="p-2 bg-brand-container rounded-xl text-brand">
-              <Target className="w-5 h-5" />
+        {!allTodo && (
+          <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="p-2 bg-brand-container rounded-xl text-brand">
+                <Target className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-xs font-bold text-[#1d1b20] dark:text-white uppercase tracking-wider leading-none">
+                  Daily Completion Target
+                </h4>
+                <p className="text-[10px] text-[#49454f] dark:text-[#c4c6d0] mt-0.5 font-bold leading-none">
+                  Number of backlog units you plan to finish daily
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h4 className="text-xs font-bold text-[#1d1b20] dark:text-white uppercase tracking-wider leading-none">
-                Global Clearance Budget (CPD)
-              </h4>
-              <p className="text-[10px] text-[#49454f] dark:text-[#c4c6d0] mt-0.5 font-bold leading-none">
-                Number of lectures you resolve to complete daily
-              </p>
+
+            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+              <button
+                onClick={() => handleGlobalCpdChange(data.classes_per_day - 1)}
+                type="button"
+                className="w-10 h-10 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-transparent dark:border-brand-container/60 font-bold flex items-center justify-center transition-all"
+                style={{ minWidth: '40px', minHeight: '40px' }}
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <input
+                type="number"
+                min="1"
+                value={data.classes_per_day}
+                onChange={e => handleGlobalCpdChange(parseInt(e.target.value) || 1)}
+                className="bg-brand-container text-center font-mono font-bold text-lg w-16 py-1.5 rounded-xl text-brand border border-[#cac4d0]/30 dark:border-brand-container focus:outline-none"
+              />
+              <button
+                onClick={() => handleGlobalCpdChange(data.classes_per_day + 1)}
+                type="button"
+                className="w-10 h-10 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-transparent dark:border-brand-container/60 font-bold flex items-center justify-center transition-all"
+                style={{ minWidth: '40px', minHeight: '40px' }}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <span className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold font-mono pl-1">items/day</span>
             </div>
-          </div>
+          </section>
+        )}
 
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-            <button
-              onClick={() => handleGlobalCpdChange(data.classes_per_day - 1)}
-              type="button"
-              className="w-10 h-10 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-transparent dark:border-brand-container/60 font-bold flex items-center justify-center transition-all"
-              style={{ minWidth: '40px', minHeight: '40px' }}
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <input
-              type="number"
-              min="1"
-              value={data.classes_per_day}
-              onChange={e => handleGlobalCpdChange(parseInt(e.target.value) || 1)}
-              className="bg-brand-container text-center font-mono font-bold text-lg w-16 py-1.5 rounded-xl text-brand border border-[#cac4d0]/30 dark:border-brand-container focus:outline-none"
-            />
-            <button
-              onClick={() => handleGlobalCpdChange(data.classes_per_day + 1)}
-              type="button"
-              className="w-10 h-10 rounded-full bg-brand-container hover:bg-brand-container-hover text-brand border border-transparent dark:border-brand-container/60 font-bold flex items-center justify-center transition-all"
-              style={{ minWidth: '40px', minHeight: '40px' }}
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            <span className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold font-mono pl-1">classes/day</span>
-          </div>
-        </section>
 
-        {/* Custom Weight Progress Chart Visualizer */}
         <section>
           <BacklogChart subjects={data.subjects} />
         </section>
 
-        {/* Active Modules Track Card Grid */}
         <section className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs font-extrabold text-brand uppercase tracking-widest flex items-center gap-1">
               <Calendar className="w-4 h-4 text-brand" />
-              ACTIVE SUBJECT MODULES
+              ACTIVE BACKLOG ENTRIES
             </h3>
             <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0] font-bold italic">
-              Touch / click keys to log activity
+              Tap buttons to add or complete units
             </span>
           </div>
 
@@ -662,6 +782,7 @@ export default function App() {
               <SubjectCard
                 key={sub.name}
                 subject={sub}
+                autoGrowthEnabled={autoGrowthEnabled}
                 maxBacklog={getMaxSubjectBacklog()}
                 onModifyBacklog={amt => updateSubjectBacklog(sub.name, amt)}
                 onUpdateDailyIncrease={val => updateSubjectGrowth(sub.name, val)}
@@ -670,76 +791,70 @@ export default function App() {
           </div>
         </section>
 
-        {/* Time Travel Gamification controls */}
-        <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 space-y-3 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-brand" />
-            <h4 className="text-xs font-bold text-[#1d1b20] dark:text-white uppercase tracking-wider">
-              🚀 Accumulation Predictor
-            </h4>
-          </div>
-          <p className="text-[10px] text-[#49454f] dark:text-[#c4c6d0] leading-relaxed font-medium">
-            Simulate your course release timeline. Fast forward elapsed time to inspect the terrifying compound effects of neglecting core daily watches. Ensure you don't actually lose your active states!
-          </p>
+        {anySchedule && autoGrowthEnabled && (
+          <section className="bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[24px] p-4 space-y-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-brand" />
+              <h4 className="text-xs font-bold text-[#1d1b20] dark:text-white uppercase tracking-wider">
+                Accumulation Predictor
+              </h4>
+            </div>
+            <p className="text-[10px] text-[#49454f] dark:text-[#c4c6d0] leading-relaxed font-medium">
+              Fast forward elapsed time to inspect how automatic growth rules affect your queue. This simulation does not save until you make real changes.
+            </p>
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            <button
-              onClick={() => handleTimeTravelOffset(1)}
-              type="button"
-              className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
-              style={{ minHeight: '36px' }}
-            >
-              +1 Day Release Growth
-            </button>
-            <button
-              onClick={() => handleTimeTravelOffset(7)}
-              type="button"
-              className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
-              style={{ minHeight: '36px' }}
-            >
-              +1 Week Cumulative
-            </button>
-            <button
-              onClick={() => handleTimeTravelOffset(30)}
-              type="button"
-              className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
-              style={{ minHeight: '36px' }}
-            >
-              +30 Days Snowball
-            </button>
-
-            {simulatedDaysShift > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
               <button
-                onClick={() => handleTimeTravelOffset(0)}
+                onClick={() => handleTimeTravelOffset(1)}
                 type="button"
-                className="bg-red-500/10 border border-red-500/30 text-xs text-red-700 dark:text-red-400 font-bold py-2 px-3.5 rounded-full hover:bg-red-500/20 transition-all flex items-center gap-1"
+                className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
                 style={{ minHeight: '36px' }}
               >
-                Reset Time Machine ({simulatedDaysShift}d offset)
+                +1 Day Growth
               </button>
-            )}
-          </div>
-        </section>
+              <button
+                onClick={() => handleTimeTravelOffset(7)}
+                type="button"
+                className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
+                style={{ minHeight: '36px' }}
+              >
+                +1 Week Growth
+              </button>
+              <button
+                onClick={() => handleTimeTravelOffset(30)}
+                type="button"
+                className="bg-brand-container hover:bg-brand-container-hover text-[11px] font-bold py-2 px-3.5 rounded-full border border-[#cac4d0]/20 dark:border-brand-container transition-all text-brand"
+                style={{ minHeight: '36px' }}
+              >
+                +30 Days Growth
+              </button>
+
+              {simulatedDaysShift > 0 && (
+                <button
+                  onClick={() => handleTimeTravelOffset(0)}
+                  type="button"
+                  className="bg-red-500/10 border border-red-500/30 text-xs text-red-700 dark:text-red-400 font-bold py-2 px-3.5 rounded-full hover:bg-red-500/20 transition-all flex items-center gap-1"
+                  style={{ minHeight: '36px' }}
+                >
+                  Reset Time Machine ({simulatedDaysShift}d offset)
+                </button>
+              )}
+            </div>
+          </section>
+        )}
 
       </main>
 
-      {/* Footer */}
       <footer className="bg-[#f7f2fa] dark:bg-[#15131b] border-t border-[#cac4d0]/30 dark:border-[#24262f]/60 py-6 px-4 mt-12 text-center text-xs">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-left font-sans">
             <p className="text-brand font-bold text-sm tracking-tight mb-0.5 animate-pulse">
               ⚡ Backlog Tracker
             </p>
-            {targetDateString && calendarDays !== Infinity && (
-              <span className="text-[11px] text-[#006a6a] dark:text-[#86d6a5] font-bold block">
-                ⭐ Convergence target caught up on: {targetDateString}
-              </span>
-            )}
-          </div>          
+          </div>
         </div>
       </footer>
 
-      {/* Settings Modal */}
       {settingsModalOpen && (
         <SettingsModal
           isOpen={settingsModalOpen}
@@ -748,23 +863,24 @@ export default function App() {
           showQuotes={showQuotes}
           onToggleQuotes={handleToggleQuotes}
           onUpdateData={handleSaveData}
-          onImportFullBackup={handleSaveData}
+          onImportFullBackup={(importedData) => handleSaveData(resolveScheduleConflicts(importedData))}
           onImportCourseDesign={(importedData) => {
-            // Load the imported subjects into setup state, merging with existing ones
+            const resolvedImport = resolveScheduleConflicts(importedData);
             const mergedSubjects = { ...data.subjects };
-            Object.entries(importedData.subjects).forEach(([name, sub]) => {
+            Object.entries(resolvedImport.subjects).forEach(([name, sub]) => {
               if (!mergedSubjects[name]) {
                 mergedSubjects[name] = sub;
               }
             });
             setData({
               ...data,
-              course_name: importedData.course_name || data.course_name,
-              classes_per_day: importedData.classes_per_day || data.classes_per_day,
-              skip_sunday: importedData.skip_sunday !== undefined ? importedData.skip_sunday : data.skip_sunday,
+              course_name: resolvedImport.course_name || data.course_name,
+              classes_per_day: resolvedImport.classes_per_day || data.classes_per_day,
+              skip_sunday: resolvedImport.skip_sunday !== undefined ? resolvedImport.skip_sunday : data.skip_sunday,
               subjects: mergedSubjects,
-              palette_color: importedData.palette_color || data.palette_color,
-              theme: importedData.theme || data.theme,
+              palette_color: resolvedImport.palette_color || data.palette_color,
+              theme: resolvedImport.theme || data.theme,
+              auto_growth_enabled: resolvedImport.auto_growth_enabled ?? data.auto_growth_enabled,
               setup_done: false
             });
             setWizardOpen(true);
@@ -772,6 +888,11 @@ export default function App() {
           }}
           darkMode={darkMode}
           onToggleDarkMode={setDarkMode}
+          onOpenConfiguration={() => {
+            setSettingsModalOpen(false);
+            setWizardOpen(true);
+          }}
+          onOpenHelp={() => setHelpModalOpen(true)}
         />
       )}
     </div>

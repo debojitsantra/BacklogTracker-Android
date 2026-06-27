@@ -1,9 +1,9 @@
-A beautifully crafted, Material Design 3 mobile and web application powered by React, Vite, Tailwind CSS v4 to help students calculate, track, and systematically defeat compounding academic backlogs.
+A beautifully crafted Material Design 3 tracker for managing anything that piles up: study backlogs, work queues, games, habits, routines, or fully custom pending lists. It works offline, stores data locally, and helps you track manual progress or scheduled backlog growth.
 
 Features:
-- Track and calculate compounding backlogs
-- Material Design 3 ui
+- Track study, work, games, habits, and custom lists
+- One-time task mode and count-based backlog mode
+- Optional per-day and repeat-day auto-growth schedules
 - Light and dark themes
 - Local offline data storage
-- IMPORT/EXPORT Json backups and course designs
-
+- Import/export JSON backups and shareable templates

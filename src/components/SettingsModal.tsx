@@ -24,7 +24,8 @@ import {
   FileJson,
   User,
   Github,
-  Award
+  Award,
+  HelpCircle
 } from 'lucide-react';
 import { AppData } from '../types';
 import { validateAndParseImport } from '../utils/validation';
@@ -40,6 +41,8 @@ interface SettingsModalProps {
   onImportCourseDesign: (importedData: AppData) => void;
   darkMode: boolean;
   onToggleDarkMode: (val: boolean) => void;
+  onOpenConfiguration: () => void;
+  onOpenHelp: () => void;
 }
 
 const COLOR_PRESETS = [
@@ -66,16 +69,15 @@ export default function SettingsModal({
   onImportFullBackup,
   onImportCourseDesign,
   darkMode,
-  onToggleDarkMode
+  onToggleDarkMode,
+  onOpenConfiguration,
+  onOpenHelp
 }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<'customization' | 'backup'>('customization');
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
 
-  // Customization States
   const [selectedColor, setSelectedColor] = useState(data.palette_color || '#6750a4');
-  const [showCreditsModal, setShowCreditsModal] = useState(false);
 
-  // Backup & Import States
   const [copiedType, setCopiedType] = useState<'course' | 'backup' | null>(null);
   const [importText, setImportText] = useState('');
   const [validationMessage, setValidationMessage] = useState<{
@@ -114,7 +116,6 @@ export default function SettingsModal({
           data: jsonStr,
           mimeType: 'application/json',
         });
-        // Show a brief in-UI success message
         setDownloadSuccess(`"${filename}" saved to Downloads ✓`);
         setTimeout(() => setDownloadSuccess(null), 3500);
         return;
@@ -136,7 +137,6 @@ export default function SettingsModal({
           });
           return;
         } catch (_) {
-          // Share sheet dismiss
           return;
         }
       }
@@ -155,28 +155,36 @@ export default function SettingsModal({
   };
 
   const handleExportCourseDesign = () => {
-    // Exclude backlogs, last_updated, setup_done, etc.
-    const cleanSubjects: Record<string, any> = {};
+    const cleanItems: Record<string, any> = {};
     Object.entries(data.subjects || {}).forEach(([name, sub]) => {
-      cleanSubjects[name] = {
+      const mode = sub.growth_mode || (sub.repeat_days?.length ? 'repeat' : sub.daily_increase > 0 ? 'perday' : 'none');
+      cleanItems[name] = {
         emoji: sub.emoji,
         color: sub.color,
-        daily_increase: sub.daily_increase
+        growth_mode: mode
       };
+      if (sub.completion_mode) {
+        cleanItems[name].completion_mode = sub.completion_mode;
+      }
+      if (sub.daily_increase > 0) {
+        cleanItems[name].perday = sub.daily_increase;
+      }
+      if (mode === 'repeat' && sub.repeat_days?.length) {
+        cleanItems[name].repeat_days = sub.repeat_days;
+      }
     });
 
     const exportObj = {
       schemaVersion: 1,
       exportType: 'course_design',
-      course_name: data.course_name,
-      subjects: cleanSubjects,
-      classes_per_day: data.classes_per_day,
-      skip_sunday: data.skip_sunday,
+      title: data.course_name,
+      description: 'Shared Backlog Tracker template',
+      items: cleanItems,
       theme: data.theme,
       palette_color: data.palette_color
     };
 
-    downloadJSON(exportObj, `${data.course_name.toLowerCase().replace(/\s+/g, '-')}-course-design.json`);
+    downloadJSON(exportObj, `${data.course_name.toLowerCase().replace(/\s+/g, '-')}-template.json`);
   };
 
   const handleExportFullBackup = () => {
@@ -191,22 +199,31 @@ export default function SettingsModal({
   const handleCopyJson = (type: 'course' | 'backup') => {
     let objToCopy: object;
     if (type === 'course') {
-      const cleanSubjects: Record<string, any> = {};
+      const cleanItems: Record<string, any> = {};
       Object.entries(data.subjects || {}).forEach(([name, sub]) => {
-        cleanSubjects[name] = {
+        const mode = sub.growth_mode || (sub.repeat_days?.length ? 'repeat' : sub.daily_increase > 0 ? 'perday' : 'none');
+        cleanItems[name] = {
           emoji: sub.emoji,
           color: sub.color,
-          daily_increase: sub.daily_increase
+          growth_mode: mode
         };
+        if (sub.completion_mode) {
+          cleanItems[name].completion_mode = sub.completion_mode;
+        }
+        if (sub.daily_increase > 0) {
+          cleanItems[name].perday = sub.daily_increase;
+        }
+        if (mode === 'repeat' && sub.repeat_days?.length) {
+          cleanItems[name].repeat_days = sub.repeat_days;
+        }
       });
 
       objToCopy = {
         schemaVersion: 1,
         exportType: 'course_design',
-        course_name: data.course_name,
-        subjects: cleanSubjects,
-        classes_per_day: data.classes_per_day,
-        skip_sunday: data.skip_sunday,
+        title: data.course_name,
+        description: 'Shared Backlog Tracker template',
+        items: cleanItems,
         theme: data.theme,
         palette_color: data.palette_color
       };
@@ -230,7 +247,7 @@ export default function SettingsModal({
     if (result.success && result.data && result.type) {
       setValidationMessage({
         success: true,
-        text: `Validation successful! Detected a ${result.type === 'course_design' ? 'Course Design template' : 'Full Backup file'}.`,
+        text: `Validation successful! Detected a ${result.type === 'course_design' ? 'Backlog template' : 'Full Backup file'}.`,
         type: result.type,
         parsedData: result.data
       });
@@ -240,6 +257,13 @@ export default function SettingsModal({
         text: result.error || 'Invalid JSON input data.'
       });
     }
+  };
+
+  const handleAutoGrowthChange = (val: boolean) => {
+    onUpdateData({
+      ...data,
+      auto_growth_enabled: val
+    });
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,7 +278,7 @@ export default function SettingsModal({
       if (result.success && result.data && result.type) {
         setValidationMessage({
           success: true,
-          text: `File loaded and verified: ${result.type === 'course_design' ? 'Course Design' : 'Full Backup'}.`,
+          text: `File loaded and verified: ${result.type === 'course_design' ? 'Backlog template' : 'Full Backup'}.`,
           type: result.type,
           parsedData: result.data
         });
@@ -293,7 +317,6 @@ export default function SettingsModal({
         exit={{ scale: 0.95, opacity: 0 }}
         className="w-full max-w-lg bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[28px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-[#1d1b20] dark:text-white"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#cac4d0]/20 dark:border-[#24262f]/60">
           <div className="flex items-center gap-2">
             <Sliders className="w-5 h-5 text-brand" />
@@ -307,7 +330,6 @@ export default function SettingsModal({
           </button>
         </div>
 
-        {/* Tab Selection */}
         <div className="flex bg-[#f3edf7] dark:bg-[#24262f] p-1 mx-6 mt-4 rounded-xl">
           <button
             onClick={() => setActiveTab('customization')}
@@ -325,15 +347,13 @@ export default function SettingsModal({
               : 'text-[#49454f] dark:text-[#cac4d0] hover:text-[#1d1b20] dark:hover:text-white'
               }`}
           >
-            Backup & Share
+            Backup & Restore
           </button>
         </div>
 
-        {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
           {activeTab === 'customization' ? (
             <>
-              {/* App Theme Toggle */}
               <div className="space-y-2">
                 <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">App Layout Theme</label>
                 <div className="flex items-center justify-between p-3 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60">
@@ -355,14 +375,27 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              {/* Theme Customization Presets */}
+              <div className="space-y-2">
+                <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">Tracker Configuration</label>
+                <button
+                  onClick={onOpenConfiguration}
+                  type="button"
+                  className="w-full flex items-center justify-between gap-3 p-3 bg-brand-container hover:bg-brand-container-hover rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 text-left transition-all"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-brand">Configure entries and rules</span>
+                    <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0]">Edit item names, unit labels, repeat days, backlog counts, and completion target</span>
+                  </div>
+                  <Sliders className="w-4 h-4 text-brand flex-shrink-0" />
+                </button>
+              </div>
+
               <div className="space-y-3">
                 <div className="flex items-center gap-1.5">
                   <Palette className="w-4 h-4 text-brand" />
                   <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">App Color Customization</label>
                 </div>
 
-                {/* Presets Grid */}
                 <div className="grid grid-cols-2 gap-2">
                   {COLOR_PRESETS.map((color) => {
                     const isSelected = selectedColor.toLowerCase() === color.hex.toLowerCase();
@@ -382,7 +415,6 @@ export default function SettingsModal({
                   })}
                 </div>
 
-                {/* Custom Color Picker */}
                 <div className="flex items-center gap-3 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 p-3 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60">
                   <span className="text-xs font-semibold flex-1">Or select custom HEX accent color:</span>
                   <div className="flex items-center gap-2">
@@ -403,16 +435,37 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              {/* Growth Customization: Skip Sundays */}
               <div className="space-y-2">
-                <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">Weekly Planning</label>
+                <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">Auto Growth</label>
+                <div className="flex items-center justify-between p-3 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60">
+                  <div className="flex flex-col flex-1 pr-4">
+                    <div className="flex items-center gap-1">
+                      <CalendarDays className="w-3.5 h-3.5 text-brand" />
+                      <span className="text-xs font-bold">Auto growth rules</span>
+                    </div>
+                    <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0]">Pause or resume all scheduled backlog increases</span>
+                  </div>
+                  <button
+                    onClick={() => handleAutoGrowthChange(data.auto_growth_enabled === false)}
+                    type="button"
+                    className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer ${data.auto_growth_enabled !== false ? 'bg-brand' : 'bg-neutral-300 dark:bg-neutral-805'
+                      }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${data.auto_growth_enabled !== false ? 'translate-x-6' : 'translate-x-0'
+                        }`}
+                    />
+                  </button>
+                </div>
+
+                {data.auto_growth_enabled !== false && (
                 <div className="flex items-center justify-between p-3 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60">
                   <div className="flex flex-col flex-1 pr-4">
                     <div className="flex items-center gap-1">
                       <CalendarDays className="w-3.5 h-3.5 text-brand" />
                       <span className="text-xs font-bold">Skip Sunday in backlog growth</span>
                     </div>
-                    <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0]">Prevents automated daily backlog increases from executing on Sundays</span>
+                    <span className="text-[10px] text-[#49454f] dark:text-[#cac4d0]">Pauses daily (+per day) growth on Sundays. Does not affect repeat-days schedules.</span>
                   </div>
                   <button
                     onClick={() => handleSkipSundayChange(!data.skip_sunday)}
@@ -422,13 +475,13 @@ export default function SettingsModal({
                   >
                     <div
                       className={`bg-white w-4 h-4 rounded-full shadow-sm transform duration-200 ${data.skip_sunday ? 'translate-x-6' : 'translate-x-0'
-                        }`}
+                      }`}
                     />
                   </button>
                 </div>
+                )}
               </div>
 
-              {/* Interface Customization: Quotes */}
               <div className="space-y-2">
                 <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">Dashboard Layout</label>
                 <div className="flex items-center justify-between p-3 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60">
@@ -453,19 +506,20 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              {/* About & Credits */}
               <div className="space-y-2 border-t border-[#cac4d0]/20 dark:border-[#24262f]/60 pt-4">
                 <label className="text-xs text-[#49454f] dark:text-[#cac4d0] font-bold uppercase tracking-wider block">About & Links</label>
                 <div className="flex flex-col sm:flex-row gap-2.5">
                   <button
-                    onClick={() => setShowCreditsModal(true)}
+                    onClick={onOpenHelp}
                     type="button"
-                    className="flex-1 bg-[#f3edf7]/50 dark:bg-[#24262f]/40 hover:bg-[#e8def8] dark:hover:bg-[#2d303a] p-3 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-[#1d1b20] dark:text-white"
+                    className="flex-1 bg-brand-container hover:bg-brand-container-hover p-3 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex items-center justify-center gap-2 cursor-pointer transition-all text-xs font-bold text-brand"
                     style={{ minHeight: '44px' }}
                   >
-                    <User className="w-4 h-4 text-brand" />
-                    <span>Story behind the App</span>
+                    <HelpCircle className="w-4 h-4" />
+                    <span>Help</span>
                   </button>
+
+
 
                   <a
                     href="https://github.com/debojitsantra"
@@ -482,7 +536,6 @@ export default function SettingsModal({
             </>
           ) : (
             <>
-              {/* Download success toast */}
               <AnimatePresence>
                 {downloadSuccess && (
                   <motion.div
@@ -497,18 +550,16 @@ export default function SettingsModal({
                 )}
               </AnimatePresence>
 
-              {/* Export Panel */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-[#49454f] dark:text-[#cac4d0] uppercase tracking-wider">Export Backlog Data</h3>
 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Course Design */}
                   <div className="bg-[#f3edf7]/50 dark:bg-[#24262f]/40 p-4 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex flex-col justify-between space-y-3">
                     <div>
-                      <h4 className="text-xs font-bold text-brand">Course Design only</h4>
+                      <h4 className="text-xs font-bold text-brand">Template only</h4>
                       <p className="text-[10px] text-[#49454f] dark:text-[#cac4d0] leading-relaxed mt-1">
-                        Syllabus schema, subject colors, emojis, and daily increase rates. <strong>No personal backlog counts</strong> included. Perfect for sharing!
+                        Entry names, colors, emojis, optional per-day rules, and repeat days. <strong>No personal backlog counts</strong> included.
                       </p>
                     </div>
                     <div className="flex gap-2 pt-1">
@@ -529,12 +580,11 @@ export default function SettingsModal({
                     </div>
                   </div>
 
-                  {/* Full Backup */}
                   <div className="bg-[#f3edf7]/50 dark:bg-[#24262f]/40 p-4 rounded-2xl border border-[#cac4d0]/20 dark:border-[#24262f]/60 flex flex-col justify-between space-y-3">
                     <div>
                       <h4 className="text-xs font-bold text-brand">Full Snapshot Backup</h4>
                       <p className="text-[10px] text-[#49454f] dark:text-[#cac4d0] leading-relaxed mt-1">
-                        Complete data snapshot including subjects, <strong>active backlog sizes</strong>, configurations, and last sync timestamps.
+                        Complete data snapshot including entries, <strong>active backlog sizes</strong>, configurations, and last sync timestamps.
                       </p>
                     </div>
                     <div className="flex gap-2 pt-1">
@@ -557,7 +607,6 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              {/* Import Panel */}
               <div className="space-y-3 border-t border-[#cac4d0]/20 dark:border-[#24262f]/60 pt-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <h3 className="text-xs font-bold text-[#49454f] dark:text-[#cac4d0] uppercase tracking-wider">Import Backlog Data</h3>
@@ -571,7 +620,6 @@ export default function SettingsModal({
                   </a>
                 </div>
 
-                {/* File Drop and Pasted JSON */}
                 <div className="space-y-3">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
@@ -603,7 +651,6 @@ export default function SettingsModal({
                     />
                   </div>
 
-                  {/* Validate Trigger */}
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -626,7 +673,6 @@ export default function SettingsModal({
                     )}
                   </div>
 
-                  {/* Validation Message Notification Panel */}
                   <AnimatePresence>
                     {validationMessage && (
                       <motion.div
@@ -649,11 +695,11 @@ export default function SettingsModal({
 
                         {validationMessage.success && (
                           <div className="border-t border-[#cac4d0]/20 pt-2 flex flex-col space-y-1">
-                            <span className="text-[10px] font-bold text-[#49454f] dark:text-[#cac4d0]">Course Name: {validationMessage.parsedData?.course_name}</span>
-                            <span className="text-[10px] font-bold text-[#49454f] dark:text-[#cac4d0]">Subjects: {Object.keys(validationMessage.parsedData?.subjects || {}).join(', ')}</span>
+                            <span className="text-[10px] font-bold text-[#49454f] dark:text-[#cac4d0]">Template: {validationMessage.parsedData?.course_name}</span>
+                            <span className="text-[10px] font-bold text-[#49454f] dark:text-[#cac4d0]">Entries: {Object.keys(validationMessage.parsedData?.subjects || {}).join(', ')}</span>
                             {validationMessage.type === 'course_design' ? (
                               <p className="text-[9px] text-[#49454f] dark:text-[#cac4d0] leading-normal italic">
-                                Note: This is a Course Design template. Loading this will open the Setup Wizard pre-filled with these subject structures.
+                                This is a template. Loading this will open the setup wizard pre-filled with these entries.
                               </p>
                             ) : (
                               <p className="text-[9px] text-red-500 dark:text-red-400 font-bold leading-normal">
@@ -670,7 +716,7 @@ export default function SettingsModal({
                                 }`}
                             >
                               <FileJson className="w-3.5 h-3.5" />
-                              {validationMessage.type === 'course_design' ? 'Load Design into Setup Wizard' : 'Apply Full Backup Overwrite'}
+                              {validationMessage.type === 'course_design' ? 'Load Template into Setup Wizard' : 'Apply Full Backup Overwrite'}
                             </button>
                           </div>
                         )}
@@ -683,7 +729,6 @@ export default function SettingsModal({
           )}
         </div>
 
-        {/* Footer actions */}
         <div className="bg-[#f7f2fa] dark:bg-[#15131b] border-t border-[#cac4d0]/20 dark:border-[#24262f]/60 py-3.5 px-6 flex justify-end">
           <button
             onClick={onClose}
@@ -694,51 +739,7 @@ export default function SettingsModal({
         </div>
       </motion.div>
 
-      {/* Story Modal Popup */}
-      <AnimatePresence>
-        {showCreditsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1d1b20]/65 dark:bg-black/85 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="w-full max-w-sm bg-white dark:bg-[#1a1c22] border border-[#cac4d0]/30 dark:border-[#24262f]/60 rounded-[28px] p-6 relative text-[#1d1b20] dark:text-white shadow-xl"
-            >
-              <button
-                onClick={() => setShowCreditsModal(false)}
-                type="button"
-                className="absolute right-4 top-4 p-1.5 text-[#49454f] dark:text-[#c4c6d0] hover:text-[#1d1b20] dark:hover:text-white rounded-full bg-[#f3edf7] dark:bg-[#24262f]"
-                style={{ minWidth: '32px', minHeight: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <X className="w-4 h-4" />
-              </button>
 
-              <div className="text-center pt-2">
-                <div className="w-12 h-12 bg-brand-container text-brand rounded-2xl flex items-center justify-center mx-auto mb-3 border border-transparent dark:border-amber-400/20">
-                  <Award className="w-6 h-6" />
-                </div>
-                <h3 className="text-base font-bold text-[#1d1b20] dark:text-white"></h3>
-                <p className="text-[10px] text-brand uppercase tracking-widest font-mono font-bold mt-0.5">
-                  Story behind this app
-                </p>
-
-                <p className="text-xs text-[#49454f] dark:text-[#c4c6d0] mt-4 leading-relaxed font-medium">
-                  Backlog Tracker was created out of frustration. I used to recalculate backlogs manually all the time, and it became exhausting. I was spending more time calculating backlogs than actually clearing them. So I built this app for myself.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => setShowCreditsModal(false)}
-                  className="w-full mt-6 bg-brand hover:opacity-95 text-white dark:text-[#111318] font-bold py-2.5 rounded-full text-xs transition-all cursor-pointer shadow-sm"
-                  style={{ minHeight: '44px' }}
-                >
-                  Dismiss
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

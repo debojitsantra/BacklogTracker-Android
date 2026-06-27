@@ -1,116 +1,155 @@
-#  Backlog Tracker Android
-[![F-Droid](https://img.shields.io/f-droid/v/com.debojitsantra.backlogtracker.svg)](https://f-droid.org/packages/com.debojitsantra.backlogtracker/)    
+# Backlog Tracker
+
+[![F-Droid](https://img.shields.io/f-droid/v/com.debojitsantra.backlogtracker.svg)](https://f-droid.org/packages/com.debojitsantra.backlogtracker/)
 ![Maintenance](https://img.shields.io/badge/maintenance-temporarily_paused-orange)
 
 <p align="center">
   <img src="public/app_logo.png" width="120" style="border-radius: 24px;" alt="Backlog Tracker Logo" referrerPolicy="no-referrer" />
 </p>
 
-A beautifully crafted, high-fidelity **Material Design 3** mobile application powered by **React**, **Vite**, **Tailwind CSS v4**, and **Capacitor** to help students calculate, track, and systematically defeat compounding academic backlogs.
+Backlog Tracker is an offline-first app for Android and desktop. It tracks anything that piles up: study backlogs, work queues, games, habits, routines, or custom pending lists.
+
+## Template Repo
+
+Download tracker templates from:
+
+[backlogdesigner.pages.dev](https://backlogdesigner.pages.dev)
 
 
-### **Course Repo** at [backlogdesigner.pages.dev](https://backlogdesigner.pages.dev)
 
-- **create and download** premade course design from here
----
+## Features
 
-##  Features
+- Choose between count-based backlog mode and one-time task mode
+- Add per-day or repeat-day automatic growth schedules
+- Pause auto-growth when needed
+- Estimate clearance time and finish date from your daily completion target
+- Preview future backlog growth with the accumulation predictor
+- Import and export JSON backups and shareable templates
 
-- **Smart Course Setup Wizard**: Painless onboarding configuration supporting standard preset curriculums and custom modular subjects.
-- **Adaptive Threat Banner**: An algorithm-powered indicator tracking course convergence timeline (secured, stabilized, overloaded, or critical snowballing state).
-- **Time Simulator / Predictor**: A predictive tool to fast-forward elapsed days and visualize the exact cumulative compound effects of neglecting daily targets.
-- **Material You Dynamic Coloring**: Premium MD3 palette adapting meticulously across light themes and high-contrast ambient dark modes.
-- **Robust Client Persistence**: Secure offline-first database mapping utilizing local browser and native state managers.
-- **Import/export data**: Save your backup data, course design to quickly pickup where you left on other devices.
----
 
 ## Screenshots
-
+### Phone
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="20%" alt="Screenshot 1" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="20%" alt="Screenshot 2" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="20%" alt="Screenshot 3" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="20%" alt="Screenshot 4" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="20%" alt="Screenshot 5" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/6.png" width="20%" alt="Screenshot 6" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/7.png" width="20%" alt="Screenshot 7" />
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/8.png" width="20%" alt="Screenshot 8" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="20%" alt="Screenshot P1" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="20%" alt="Screenshot P2" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="20%" alt="Screenshot P3" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="20%" alt="Screenshot P4" />
 </p>
 
----
+### Desktop
+
+<p align="center">
+  <img src="assets/images/Screenshots/1.png" width="20%" alt="Screenshot D 1" />
+  <img src="assets/images/Screenshots/2.png" width="20%" alt="Screenshot D 2" />
+  <img src="assets/images/Screenshots/3.png" width="20%" alt="Screenshot D 3" />
+  <img src="assets/images/Screenshots/4.png" width="20%" alt="Screenshot D 4" />
+</p>
 
 ## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS v4, Motion (Animations)
-- **Native Shell**: `@capacitor/core`, `@capacitor/android` (for compiling high-performance Android APKs)
-- **Build System**: Vite, ESLint
-- **CI/CD Pipeline**: GitHub Actions for automated, cloud-based APK generation
-
----
+- React 
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- Motion
+- Capacitor for android
+- Pake for desktop packaging
 
 ## Install
 
-Grab the latest release from 
-
-
+### Android
 <p>
-  <a href="https://github.com/debojitsantra/BacklogTracker-Android/releases">
+  <a href="https://github.com/debojitsantra/BacklogTracker/releases">
     <img src="https://img.shields.io/github/v/release/debojitsantra/BacklogTracker-Android?label=GitHub%20Release&style=for-the-badge&logo=github" alt="GitHub Release" style="vertical-align: middle;">
   </a>
   &nbsp;&nbsp;
-  <a href="https://f-droid.org/packages/com.debojitsantra.backlogtracker">
-    <img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="60" style="vertical-align: middle;">
-  </a>
+ 
 </p>
 
-**Pc version** [Here](https://github.com/debojitsantra/BacklogTracker) (Made with Python • Lightweight on Pc • Low Ram Use)
+## Desktop
 
----
+Download latest github release for your platform:
 
-##  Local Development & Web Execution
+| Platform | Download |
+|----------|----------|
+| Windows  | [BacklogTracker_Setup.exe](https://github.com/debojitsantra/BacklogTracker/releases/) |
+| Linux    | [BacklogTracker_Linux.tar.gz](https://github.com/debojitsantra/BacklogTracker/releases/) |
+| macOS    | [BacklogTracker_macOS.zip](https://github.com/debojitsantra/BacklogTracker/releases/) *(untested)* |
+| Android  | [BacklogTracker.apk](https://github.com/debojitsantra/BacklogTracker/releases/) |
+
+
+## App Stores
+
+### Android
+
+<a href="https://f-droid.org/packages/com.debojitsantra.backlogtracker">
+    <img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="60" style="vertical-align: middle;">
+</a>
+
+### Windows
+
+<a href="https://apps.microsoft.com/detail/9p112ngslvf0?referrer=appbadge&mode=full" target="_blank"  rel="noopener noreferrer">
+	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200"/>
+</a>
+
+
+
+## Local Development
 
 ### Prerequisites
-- **Node.js** `v22.0.0` or higher
-- **NPM** (bundled with Node)
 
-### Run the Web Server
+- Node.js 22 or newer
+
+### Run Web Dev Server
+
 ```bash
 npm install
 npm run dev
 ```
 
----
+### Build Web Bundle
 
-##  Native Android Build
+```bash
+npm run build
+```
+
+## Android Build
 
 ### Prerequisites
-- **Android Studio** with Android SDK and build tools installed
-- **Gradle** environment configured
+
+- Android Studio
+- Android SDK/build tools
+- Java 21
+- Node.js 22 or newer
 
 ### Build Steps
+
 ```bash
-# 1. Build the web bundle
+npm ci
 npm run build
-
-# 2. Sync into Capacitor's Android project
 npx cap sync android
-
-# 3. Open in Android Studio
 npx cap open android
 ```
 
-Press **Run** inside Android Studio to launch on your device or emulator.
+Run from Android Studio, or use Gradle from the `android` directory.
 
----
+## Desktop Builds
 
-##  Automated CI/CD (GitHub Actions)
 
-Pushing a version tag (e.g. `v1.0`) triggers a fully automated signed release build.
+```text
+.github/workflows/desktop.yml
+```
 
-The workflow (`.github/workflows/build.yml`) uses **Node.js 22** and **JDK 21** to build, sign, and publish the APK to GitHub Releases automatically.
+It builds Linux, Windows, and macOS desktop packages from the local Vite output using `--use-local-file`.
 
----
+
+## GitHub Actions
+
+- `.github/workflows/build.yml` builds the signed Android release APK on version tags.
+- `.github/workflows/desktop.yml` builds Linux, Windows, and macOS desktop artifacts with Pake.
+
+
 
 ## Important Declaration
-- Documentation & some ui features made using Gemini. Everything is reviewed manually before committing. 
 
+Documentation and some UI features were made using Gemini. Everything is reviewed manually before committing.

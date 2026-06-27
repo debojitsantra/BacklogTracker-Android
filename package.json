@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
@@ -17,6 +17,7 @@
     "@capacitor/share": "^8.0.1",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
+    "emoji-picker-react": "^4.19.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "nvm": "^0.0.4",

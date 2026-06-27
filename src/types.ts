@@ -9,6 +9,11 @@ export interface Subject {
   color: string;
   backlog: number;
   daily_increase: number;
+  perday_type?: string;
+  repeat_days?: string[];
+  growth_mode?: 'none' | 'perday' | 'repeat';
+  schedule_conflict?: boolean;
+  completion_mode?: 'todo' | 'backlog';
 }
 
 export interface AppData {
@@ -19,5 +24,6 @@ export interface AppData {
   last_updated: string;
   setup_done: boolean;
   theme: 'dark' | 'light';
-  palette_color?: string; // Optional custom Material seed color
+  palette_color?: string;
+  auto_growth_enabled?: boolean;
 }

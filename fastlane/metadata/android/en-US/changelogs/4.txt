@@ -1,0 +1,9 @@
+Backlog Tracker is now more flexible:
+
+- Track study backlogs, work queues, games, habits, or custom lists
+- Added one-time task mode for simple pending/done items
+- Added per-day and repeat-day auto-growth schedules
+- Added an auto-growth pause toggle
+- Improved template import/export with new item-based JSON support
+- Added a getting-started help guide
+- Refined dashboard labels, cards, and backlog stats
