@@ -57,17 +57,6 @@ Download tracker templates from:
 
 ## Install
 
-### Android
-<p>
-  <a href="https://github.com/debojitsantra/BacklogTracker/releases">
-    <img src="https://img.shields.io/github/v/release/debojitsantra/BacklogTracker-Android?label=GitHub%20Release&style=for-the-badge&logo=github" alt="GitHub Release" style="vertical-align: middle;">
-  </a>
-  &nbsp;&nbsp;
- 
-</p>
-
-## Desktop
-
 Download latest github release for your platform:
 
 | Platform | Download |
