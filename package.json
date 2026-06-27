@@ -20,7 +20,6 @@
     "emoji-picker-react": "^4.19.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
-    "nvm": "^0.0.4",
     "react": "^19.0.1",
     "react-dom": "^19.2.7",
     "vite": "^6.2.3"

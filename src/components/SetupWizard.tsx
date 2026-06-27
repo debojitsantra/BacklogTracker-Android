@@ -5,7 +5,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import EmojiPicker, { Theme } from 'emoji-picker-react';
+import EmojiPicker, { EmojiStyle, Theme } from 'emoji-picker-react';
 import { PRESET_SUBJECTS, PALETTE } from '../data';
 import { AppData, Subject } from '../types';
 import { getLocalDateString } from '../utils/date';
@@ -1313,6 +1313,7 @@ export default function SetupWizard({ initialData, onSave, onCancel, onImportCou
                           autoFocusSearch={false}
                           width="100%"
                           height="350px"
+                          emojiStyle={EmojiStyle.NATIVE}
                           theme={document.documentElement.classList.contains('dark') ? Theme.DARK : Theme.LIGHT}
                         />
                       </motion.div>
