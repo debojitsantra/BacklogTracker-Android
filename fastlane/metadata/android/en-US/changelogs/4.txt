@@ -7,3 +7,4 @@ Backlog Tracker is now more flexible:
 - Improved template import/export with new item-based JSON support
 - Added a getting-started help guide
 - Refined dashboard labels, cards, and backlog stats
+- Added Emoji Picker
