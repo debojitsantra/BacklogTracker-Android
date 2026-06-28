@@ -15,7 +15,7 @@ Download tracker templates from:
 
 [backlogdesigner.pages.dev](https://backlogdesigner.pages.dev) 
 
-Repository: [Github](https://github.com/debojitsantra/BacklogTracker-Templates)
+Source Repository: [Github](https://github.com/debojitsantra/BacklogTracker-Templates)
 
 
 ## Features
